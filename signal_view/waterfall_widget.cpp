@@ -29,3 +29,8 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 	painter.fillRect(r, QColor::fromRgb(30, 130, 230));
 
 }
+
+void WaterfallWidget::resizeEvent(QResizeEvent *event)
+{
+
+}

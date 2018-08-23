@@ -78,6 +78,9 @@ public:
 	virtual std::string name();
 	virtual std::string name2(const std::string & key);
 
+public:
+	FileDescription desc() { return m_desc; }
+
 private:
 	FileDescription m_desc;
 };

@@ -66,15 +66,18 @@ void MainWindow::onProject(unsigned int id, int action)
 
 	if (action == Project::ShowItem) {
 		if (m_wndOfIds.find(pitem->id()) == m_wndOfIds.end()) {
-			auto subWindow = ui.mdiArea->addSubWindow(makeSubWidget(pitem));
-			m_wndOfIds[pitem->id()] = subWindow;
+			auto widget = makeSubWidget(pitem);
+			if (widget) {
+				auto subWindow = ui.mdiArea->addSubWindow(widget);
+				m_wndOfIds[pitem->id()] = subWindow;
 
-			connect(subWindow, SIGNAL(destroyed(QObject *)), this, SLOT(subWindowDestroyed(QObject*)));
+				connect(subWindow, SIGNAL(destroyed(QObject *)), this, SLOT(subWindowDestroyed(QObject*)));
 
-			subWindow->setAttribute(Qt::WA_DeleteOnClose);
-			subWindow->setWindowTitle(QString::fromStdString(pitem->name2("simple")));
-			subWindow->setToolTip(QString::fromStdString(pitem->name2("hint")));
-			subWindow->show();
+				subWindow->setAttribute(Qt::WA_DeleteOnClose);
+				subWindow->setWindowTitle(QString::fromStdString(pitem->name2("simple")));
+				subWindow->setToolTip(QString::fromStdString(pitem->name2("hint")));
+				subWindow->show();
+			}
 		}
 		else {
 			auto subWindow = m_wndOfIds[pitem->id()];
@@ -96,7 +99,17 @@ QWidget * MainWindow::makeSubWidget(ProjectItem * item)
 {
 	assert(item);
 
-	return new WaterfallWidget();
+	SignalFileItem * fileitem = dynamic_cast<SignalFileItem *>(item);
+	if (fileitem) {
+		std::auto_ptr<WaterfallWidget> widget(new WaterfallWidget());
+
+		auto desc = fileitem->desc();
+		if (widget->load(QString::fromStdString(desc.fileName), desc.dataType, desc.sampleRate))	{
+			return widget.release();
+		}
+	}
+
+	return nullptr;
 }
 
 void MainWindow::subWindowDestroyed(QObject * obj)

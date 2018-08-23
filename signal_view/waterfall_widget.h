@@ -14,10 +14,16 @@ public:
 	~WaterfallWidget();
 
 public:
+	// 载入数据文件.
 	bool load(QString filename, int type, double samplerate);
+	
+	// 关闭数据文件.
 	void close();
 
 protected:
 	virtual void paintEvent(QPaintEvent *event);
+	virtual void resizeEvent(QResizeEvent *event);
 
+private:
+	
 };
