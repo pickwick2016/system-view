@@ -1,0 +1,111 @@
+#include <algorithm>
+#include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
+
+#include <QFileInfo>
+
+#include "project.h"
+
+static unsigned int PROJECT_ITEM_ID_COUNTER = 1;
+
+ProjectItem::ProjectItem() : m_id(PROJECT_ITEM_ID_COUNTER++)
+{
+}
+
+unsigned int ProjectItem::id()
+{
+	return m_id;
+}
+
+unsigned int Project::add(ProjectItem * item)
+{
+	if (item != nullptr && find(item->id()) == nullptr) {
+		m_items.push_back(std::shared_ptr<ProjectItem>(item));
+
+		notify(item->id(), (int) Action::AddItem);
+		return item->id();
+	}
+
+	return 0;
+}
+
+unsigned int Project::add(const std::string & filename, int sampleType, double sampleRate)
+{
+	ProjectItem * item = new SignalFileItem();
+
+	return add(item);
+}
+
+void Project::remove(unsigned int id)
+{
+	if (find(id) != nullptr) {
+		notify(id, (int) Action::RemoveItem);
+
+		auto fit = std::remove_if(m_items.begin(), m_items.end(),
+			[=](auto & it) { return it->id() == id; });
+		m_items.erase(fit, m_items.end());
+	}
+}
+
+void Project::show(unsigned int id)
+{
+	if (find(id) != nullptr) {
+		notify(id, (int)Action::ShowItem);
+	}
+}
+
+ProjectItem * Project::find(unsigned int id)
+{
+	auto fit = std::find_if(m_items.begin(), m_items.end(), 
+		[=](auto & it) { return it->id() == id; });
+
+	if (fit != m_items.end()) {
+		return (* fit).get();
+	}
+
+	return nullptr;
+}
+
+std::string ProjectItem::name()
+{
+	std::string ret = (boost::format("project_item_%d") % id()).str();
+	return ret;
+}
+
+void Project::notify(unsigned int id, int action)
+{
+	m_signal(id, action);
+}
+
+SignalFileItem::SignalFileItem()
+{
+
+}
+
+SignalFileItem::SignalFileItem(FileDescription desc)
+	: m_desc(desc)
+{
+}
+
+std::string SignalFileItem::name()
+{
+	assert(m_desc.isValid());
+
+	return m_desc.fileName;
+}
+
+std::string SignalFileItem::name2(const std::string & key)
+{
+	if (boost::algorithm::iequals(key, "hint")) {
+		std::string ret;
+		ret = (boost::format("path : %s\nsps : %f") % m_desc.fileName % m_desc.sampleRate).str();
+		return ret;
+	}
+
+	if (boost::algorithm::iequals(key, "simple")) {
+		QFileInfo info(QString::fromStdString(m_desc.fileName));
+		return info.fileName().toStdString();
+	}
+
+	return "";
+}

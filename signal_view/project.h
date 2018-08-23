@@ -1,0 +1,83 @@
+#pragma once
+
+#include <string>
+#include <vector>
+#include <memory>
+#include <boost/signals2.hpp>
+
+#include "misc.h"
+
+class ProjectItem;
+
+/**
+ * 项目管理器.
+ */
+class Project
+{
+public:
+	enum Action
+	{
+		AddItem = 0,
+		RemoveItem,
+		UpdateItem,
+		ShowItem,
+	};
+
+public:
+	unsigned int add(const std::string & filename, int sampleType, double sampleRate);
+	unsigned int add(ProjectItem * item);
+
+	void remove(unsigned int id);
+
+	void show(unsigned int id);
+
+	ProjectItem * find(unsigned int id);
+
+private:
+	void notify(unsigned int id, int action);
+
+
+public:
+	boost::signals2::signal<void(unsigned int /*id*/, int/*action*/)> m_signal;
+
+private:
+	std::vector<std::shared_ptr<ProjectItem>> m_items;
+	
+};
+
+
+/**
+ * 项目条目.
+ */
+class ProjectItem
+{
+public:
+	ProjectItem();
+	virtual ~ProjectItem() {}
+
+public:
+	unsigned int id();
+
+	virtual std::string name();
+	virtual std::string name2(const std::string & key) { return ""; }
+
+private:
+	unsigned int m_id;
+};
+
+/**
+ * 信号文件条目.
+ */
+class SignalFileItem : public ProjectItem
+{
+public:
+	SignalFileItem();
+	SignalFileItem(FileDescription desc);
+
+public:
+	virtual std::string name();
+	virtual std::string name2(const std::string & key);
+
+private:
+	FileDescription m_desc;
+};
