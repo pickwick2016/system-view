@@ -115,6 +115,11 @@ public:
         horizontalLayout_5->addWidget(label_3);
 
         comboType = new QComboBox(OpenDialog);
+        comboType->addItem(QString());
+        comboType->addItem(QString());
+        comboType->addItem(QString());
+        comboType->addItem(QString());
+        comboType->addItem(QString());
         comboType->setObjectName(QStringLiteral("comboType"));
 
         horizontalLayout_5->addWidget(comboType);
@@ -158,6 +163,9 @@ public:
         QObject::connect(buttonOk, SIGNAL(clicked()), OpenDialog, SLOT(accept()));
         QObject::connect(buttonCancel, SIGNAL(clicked()), OpenDialog, SLOT(reject()));
 
+        comboType->setCurrentIndex(0);
+
+
         QMetaObject::connectSlotsByName(OpenDialog);
     } // setupUi
 
@@ -169,6 +177,13 @@ public:
         label_2->setText(QApplication::translate("OpenDialog", "\351\207\207\346\240\267\347\216\207", nullptr));
         editRate->setText(QApplication::translate("OpenDialog", "1", nullptr));
         label_3->setText(QApplication::translate("OpenDialog", "\346\225\260\346\215\256\346\240\274\345\274\217", nullptr));
+        comboType->setItemText(0, QApplication::translate("OpenDialog", "int-8", nullptr));
+        comboType->setItemText(1, QApplication::translate("OpenDialog", "int-16", nullptr));
+        comboType->setItemText(2, QApplication::translate("OpenDialog", "int-32", nullptr));
+        comboType->setItemText(3, QApplication::translate("OpenDialog", "real-32", nullptr));
+        comboType->setItemText(4, QApplication::translate("OpenDialog", "real-64", nullptr));
+
+        comboType->setCurrentText(QApplication::translate("OpenDialog", "int-8", nullptr));
         buttonOk->setText(QApplication::translate("OpenDialog", "\347\241\256\345\256\232", nullptr));
         buttonCancel->setText(QApplication::translate("OpenDialog", "\345\217\226\346\266\210", nullptr));
     } // retranslateUi

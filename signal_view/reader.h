@@ -3,10 +3,10 @@
 #include <fstream>
 #include <string>
 
-
+// 数据类型.
 enum DataType
 {
-	Unknown = 0,
+	Unknown = -1,
 	Int8,
 	Int16,
 	Int32,
@@ -14,7 +14,7 @@ enum DataType
 	Real64,
 };
 
-
+// 读取设备.
 class Reader
 {
 public:
@@ -26,12 +26,14 @@ public:
 	virtual unsigned int count() { return 0; }
 	virtual int type() { return DataType::Real32; }
 	virtual int itemSize() { return sizeof(float); }
+	virtual int channel() { return 1; }
 };
 
 // 文件数据源.
 class FileReader : public Reader
 {
 public:
+	FileReader();
 	FileReader(const std::string & filename, int datatype, double sampleRate = 1.0);
 	virtual ~FileReader();
 
@@ -41,6 +43,10 @@ public:
 	virtual unsigned int count();
 	virtual int type();
 	virtual int itemSize();
+
+public:
+	bool open(const std::string & filename, int datatype, double sampleRate = 1.0);
+	void close();
 
 private:
 	std::string m_filename;

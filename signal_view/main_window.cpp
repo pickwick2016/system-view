@@ -10,6 +10,7 @@
 #include "project_widget.h"
 #include "application.h"
 #include "waterfall_widget.h"
+#include "reader.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -37,6 +38,15 @@ MainWindow::~MainWindow()
 	assert(m_project);
 
 	m_project->m_signal.disconnect_all_slots();
+}
+
+void MainWindow::showEvent(QShowEvent * evt)
+{
+	assert(m_project);
+
+#ifdef _DEBUG
+	m_project->add("../data/tone_f5k_s32k.bin", DataType::Real32, 1);
+#endif //_DEBUG
 }
 
 void MainWindow::openFile()

@@ -27,6 +27,9 @@ public slots:
 public:
 	void onProject(unsigned int id, int action);
 
+protected:
+	void showEvent(QShowEvent * evt);
+
 private:
 	QWidget * makeSubWidget(ProjectItem * item);
 	

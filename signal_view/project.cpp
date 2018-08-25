@@ -31,9 +31,17 @@ unsigned int Project::add(ProjectItem * item)
 
 unsigned int Project::add(const std::string & filename, int sampleType, double sampleRate)
 {
-	ProjectItem * item = new SignalFileItem();
+	FileDescription desc;
+	desc.fileName = filename;
+	desc.dataType = sampleType;
+	desc.sampleRate = sampleRate;
 
-	return add(item);
+	if (desc.isValid()) {
+		ProjectItem * item = new SignalFileItem(desc);
+		return add(item);
+	}
+	
+	return 0;
 }
 
 void Project::remove(unsigned int id)

@@ -1,8 +1,28 @@
 #include <QFileInfo>
 
 #include "reader.h"
+#include "misc.h"
+
+FileReader::FileReader()
+{
+	m_filename = "";
+	m_dataType = DataType::Unknown;
+	m_sampleRate = 1;
+
+	m_fileSize = 0;
+}
 
 FileReader::FileReader(const std::string & filename, int datatype, double sampleRate)
+{
+	open(filename, datatype, sampleRate);
+}
+
+FileReader::~FileReader()
+{
+	m_file.close();
+}
+
+bool FileReader::open(const std::string & filename, int datatype, double sampleRate)
 {
 	m_filename = filename;
 	m_dataType = datatype;
@@ -10,16 +30,28 @@ FileReader::FileReader(const std::string & filename, int datatype, double sample
 
 	QFileInfo info(QString::fromStdString(filename));
 	m_fileSize = info.size();
-	
+
+	if (m_file.is_open()) {
+		m_file.close();
+	}
+
 	m_file.open(m_filename.c_str(), std::ios::binary | std::ios::in);
+
 	if (!m_file.is_open()) {
 		m_fileSize = 0;
 	}
+
+	return m_file.is_open();
 }
 
-FileReader::~FileReader()
+void FileReader::close()
 {
+	m_filename = "";
+	m_dataType = DataType::Unknown;
+	m_sampleRate = 1;
+
 	m_file.close();
+	m_fileSize = 0;
 }
 
 unsigned int FileReader::read(void * data, unsigned int count, unsigned int pos)
@@ -44,8 +76,8 @@ unsigned int FileReader::read(void * data, unsigned int count, unsigned int pos)
 
 	m_file.read((char *) data, readCount * itemSize);
 
-	unsigned int gcount = m_file.gcount() / itemSize * itemSize;
-	return gcount;
+	unsigned int getCount = tool::round_down(m_file.gcount(), itemSize);
+	return getCount;
 }
 
 double FileReader::sampleRate() 
@@ -56,7 +88,7 @@ double FileReader::sampleRate()
 unsigned int FileReader::count()
 { 
 	unsigned int itemsize = itemSize();
-	return itemsize > 0 ? m_fileSize / itemSize() : 0;
+	return (itemsize > 0) ? m_fileSize / itemSize() : 0;
 }
 
 int FileReader::type() 

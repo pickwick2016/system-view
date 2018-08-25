@@ -108,7 +108,39 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="comboType"/>
+        <widget class="QComboBox" name="comboType">
+         <property name="currentText">
+          <string>int-8</string>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <item>
+          <property name="text">
+           <string>int-8</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>int-16</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>int-32</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>real-32</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>real-64</string>
+          </property>
+         </item>
+        </widget>
        </item>
        <item>
         <spacer name="horizontalSpacer_3">
