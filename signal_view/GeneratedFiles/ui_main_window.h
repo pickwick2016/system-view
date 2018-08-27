@@ -64,6 +64,7 @@ public:
         verticalLayout_2->setContentsMargins(2, 2, 2, 2);
         mdiArea = new QMdiArea(centralWidget);
         mdiArea->setObjectName(QStringLiteral("mdiArea"));
+        mdiArea->setFocusPolicy(Qt::StrongFocus);
         mdiArea->setViewMode(QMdiArea::TabbedView);
         mdiArea->setTabsClosable(true);
 

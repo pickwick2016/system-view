@@ -79,13 +79,15 @@ void MainWindow::onProject(unsigned int id, int action)
 			auto widget = makeSubWidget(pitem);
 			if (widget) {
 				auto subWindow = ui.mdiArea->addSubWindow(widget);
+				widget->setFocusPolicy(Qt::StrongFocus);
+
 				m_wndOfIds[pitem->id()] = subWindow;
 
 				connect(subWindow, SIGNAL(destroyed(QObject *)), this, SLOT(subWindowDestroyed(QObject*)));
 
 				subWindow->setAttribute(Qt::WA_DeleteOnClose);
 				subWindow->setWindowTitle(QString::fromStdString(pitem->name2("simple")));
-				subWindow->setToolTip(QString::fromStdString(pitem->name2("hint")));
+				//subWindow->setToolTip(QString::fromStdString(pitem->name2("hint")));
 				subWindow->show();
 			}
 		}

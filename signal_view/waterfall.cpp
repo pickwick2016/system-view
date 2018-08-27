@@ -63,18 +63,28 @@ bool Waterfall::query(double start, double end, unsigned int countHint)
 	double fs = m_reader->sampleRate();
 
 	unsigned int pos1 = floor(start * fs);
-	pos1 = tool::round_down(pos1, m_align);
-
 	unsigned int pos2 = floor(end * fs);
-	pos2 = tool::round_down(pos2, m_align);
+
+	if (countHint > 0) {
+		int temp = tool::round_down((pos2 - pos1) / countHint, m_align);
+		int step = std::max<int>(temp, m_align);
+		m_currentStep = step;
+	}
+	else {
+		m_currentStep = m_align;
+	}
+
+	int align = m_currentStep;
+
+	pos1 = tool::round_down(pos1, align);
+	pos2 = tool::round_down(pos2, align);
 	
-	if (pos1 >= m_reader->count() || pos2 >= m_reader->count()) {
+	if (pos1 >= m_reader->count()) {
 		return false;
 	}
 
 	m_currentRange = { pos1, pos2 };
-	m_currentStep = m_align; // TODO: 根据countHint调整.
-
+	
 	return true;
 }
 
@@ -239,7 +249,7 @@ bool Waterfall::prepare(QRectF visible, int segmentHint)
 	if (!m_reader)
 		return false;
 
-	if (!query(visible.left(), visible.right())) {
+	if (!query(visible.left(), visible.right(), segmentHint)) {
 		return false;
 	}
 

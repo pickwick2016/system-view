@@ -75,32 +75,6 @@ private:
 	// 求功率谱.
 	unsigned int power(void * input, float * output, unsigned int fftlen, int type);
 
-private:
-	//// 当前图像尺寸.
-	//std::pair<int, int> pixmapSize();
-
-	//	
-	//// 整体的时间范围和频率范围.
-	//std::pair<double, double> totalSize();
-
-
-	//// FFT 长度.
-	//unsigned int fftLen();
-	//
-	//// 采样率.
-	//double sampleRate();
-	//
-	//// 数据类型.
-	//int dataType();
-
-	//// 所有数据的数量.
-	//unsigned int dataCount();
-
-
-	//QRectF pixmapArea();
-
-	
-private:
 
 private:
 	unsigned int m_fftLen; // fft长度.

@@ -29,6 +29,9 @@
     </property>
     <item>
      <widget class="QMdiArea" name="mdiArea">
+      <property name="focusPolicy">
+       <enum>Qt::StrongFocus</enum>
+      </property>
       <property name="viewMode">
        <enum>QMdiArea::TabbedView</enum>
       </property>

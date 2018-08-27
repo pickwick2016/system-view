@@ -34,10 +34,31 @@ protected:
 	virtual void paintEvent(QPaintEvent *event);
 	virtual void resizeEvent(QResizeEvent *event);
 	virtual void showEvent(QShowEvent * evt);
+	virtual void keyPressEvent(QKeyEvent * evt);
 
 private:
 	// 将逻辑坐标转换为物理坐标.
 	QRectF map(QRectF world, QRectF worldR, QRectF viewR);
+
+private:
+	// 预定义操作类型.
+	enum OpType
+	{
+		Left,
+		Right,
+		Up,
+		Down,
+		VertZoomIn,
+		VertZoomOut,
+		HorzZoomIn,
+		HorzZoomOut,
+		Reset,
+	};
+
+	// 执行预定义操作.
+	void operate(OpType type, double param = 0);
+
+	QRectF limitArea(QRectF vis, QRectF total, bool keepsize = true);
 
 private:
 	std::shared_ptr<Waterfall> m_waterfall;
