@@ -12,6 +12,9 @@
 
 /**
  * 瀑布图数据.
+ *
+ * 1、根据客户对指定时间段的需求，构建和提供瀑布图数据.
+ * 2、自动调整内部各项参数.
  */
 class Waterfall
 {
@@ -26,61 +29,78 @@ public:
 	void close();
 
 public:
-	// 请求一定时间范围的数据.
-	bool query(double start, double end, unsigned int countHint = 0);
+	/**
+	 * 准备瀑布图数据.
+	 * 1.检查当前数据是否可用，如果不可用，就更新.
+	 * 2.如果准备完成，可以调用pixmap(), datamap(), 获取当前数据；调用pixmapSize()、datamapSize()获取图像尺寸.
+	 *
+	 * @param visible 当前可视范围.
+	 * @param segmentHint 建议分段的数量.
+	 * @return 操作结果.
+	 */
+	bool prepare(QRectF visible, int segmentHint = 0);
 
-	// 内部数据尺寸（时间 width + 频谱 height）
-	std::pair<int, int> dataSize();
-
-	// 当前图的尺寸.
-	std::pair<int, int> currentMapSize();
+	// 当前数据的时间和频率范围（逻辑值，横向时间，纵向频谱）.
+	QRectF currentArea();
 
 	// 整体的逻辑时频范围.
 	QRectF totalArea();
 
-	// 当前对应的时间和频率范围.
-	QRectF currentArea();
-
-	// 整体的时间范围和频率范围.
-	std::pair<double, double> totalSize();
-
-public:
-	// 填充图形.
-	bool fill(QPixmap & pixmap);
-
-	uint32_t valueToColor(float val);
-
-public:
-	// FFT 长度.
-	unsigned int fftLen();
-	
-	// 采样率.
-	double sampleRate();
-	
-	// 数据类型.
-	int dataType();
-
-	// 所有数据的数量.
-	unsigned int dataCount();
-
-
-public:
+	// 当前图像数据.
 	QPixmap & pixmap() { return m_pixmap; }
 
-	QRectF pixmapArea();
+	// 当前频谱数据.
+	std::vector<float> & datamap() { return m_datamap; }
 
-	// 判断内部数据是否有效.
-	bool preparePixmap(QRectF visible);
+	// 频谱数据大小 (freq_count, segment_count)
+	std::pair<int, int> dataSize();
 
+		
 private:
+	// 请求一定时间范围的数据.
+	bool query(double start, double end, unsigned int countHint = 0);
+
 	// 根据当前状态，重新载入数据.
-	bool reloadData();
+	bool update();
 
 	// 清空状态.
 	void clear();
 
-private:
+	// 填充图形.
+	bool fill(QPixmap & pixmap);
+
+	// 数值转化为色彩.
+	uint32_t valueToColor(float val);
+
+	// 求功率谱.
 	unsigned int power(void * input, float * output, unsigned int fftlen, int type);
+
+private:
+	//// 当前图像尺寸.
+	//std::pair<int, int> pixmapSize();
+
+	//	
+	//// 整体的时间范围和频率范围.
+	//std::pair<double, double> totalSize();
+
+
+	//// FFT 长度.
+	//unsigned int fftLen();
+	//
+	//// 采样率.
+	//double sampleRate();
+	//
+	//// 数据类型.
+	//int dataType();
+
+	//// 所有数据的数量.
+	//unsigned int dataCount();
+
+
+	//QRectF pixmapArea();
+
+	
+private:
 
 private:
 	unsigned int m_fftLen; // fft长度.
@@ -91,16 +111,17 @@ private:
 	std::pair<unsigned int, unsigned int> m_currentRange; //起始点范围（动态确定）
 	unsigned int m_currentStep;	// 步长（动态确定）.
 
-	std::vector<float> m_data;
-	std::shared_ptr<Reader> m_reader;	
-	std::vector<unsigned int> m_buffer;
-
 	QPixmap m_pixmap;
+	std::vector<unsigned int> m_pixmapData;
+
+	std::vector<float> m_datamap;
+	
+	std::shared_ptr<Reader> m_reader;	
+
+	std::shared_ptr<Fft> m_fft; // fft 计算器.
 
 	typedef std::tuple<decltype(m_fftLen), decltype(m_currentRange), decltype(m_currentStep)> InnerState;
-	InnerState m_currState, m_oldState;
-
-	std::shared_ptr<Fft> m_fft;
+	InnerState m_currState, m_prevState;
 };
 
 

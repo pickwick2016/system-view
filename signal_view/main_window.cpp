@@ -45,7 +45,7 @@ void MainWindow::showEvent(QShowEvent * evt)
 	assert(m_project);
 
 #ifdef _DEBUG
-	m_project->add("../data/tone_f5k_s32k.bin", DataType::Real32, 1);
+	m_project->add("c:/data/bingle.dat", DataType::Real32, 1);
 #endif //_DEBUG
 }
 

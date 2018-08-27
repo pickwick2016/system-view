@@ -23,13 +23,7 @@ bool WaterfallWidget::load(QString filename, int type, double samplerate)
 
 	bool loaded = m_waterfall->load(filename.toStdString(), type, samplerate);
 	if (loaded) {
-
-		double fs = m_waterfall->sampleRate();
-		double ts = 1 / fs;
-
-		auto s = m_waterfall->totalSize();
-
-		m_totalArea = QRectF(0, 0, s.first, s.second);
+		m_totalArea = m_waterfall->totalArea();
 		m_visibleArea = m_totalArea;
 
 		m_dataArea = m_totalArea;		
@@ -58,10 +52,10 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 	QRect viewport = rect(); // 控件视口（像素，设备）
 	QRectF visibleArea = m_visibleArea;
 
-	if (m_waterfall->preparePixmap(visibleArea)) {
+	if (m_waterfall->prepare(visibleArea)) {
 		painter.setClipRect(viewport);
 
-		QRectF pixmapArea = m_waterfall->pixmapArea();
+		QRectF pixmapArea = m_waterfall->currentArea();
 		QRectF drawArea = map(pixmapArea, visibleArea, viewport);
 		QPixmap & pixmap = m_waterfall->pixmap();
 		QRect pixmapRect = pixmap.rect();
