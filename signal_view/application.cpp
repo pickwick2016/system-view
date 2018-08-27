@@ -3,6 +3,8 @@
 #include "application.h"
 #include "project.h"
 
+#include "fft.h"
+
 
 Application * Application::instance()
 {
@@ -29,7 +31,7 @@ bool Application::initialize()
 
 void Application::uninitialize()
 {
-
+	Fft::cleanup();
 }
 
 Project * Application::project()

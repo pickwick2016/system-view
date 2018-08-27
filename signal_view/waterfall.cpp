@@ -13,6 +13,16 @@ Waterfall::Waterfall(unsigned int fftlen)
 
 	m_reader.reset(new FileReader());
 	m_fft.reset(new Fft(m_fftLen));
+
+	m_colorRange = { -40, 80 };
+
+	m_colormap = boost::bind(tool::colormap_other, _1, _2, _3);
+}
+
+Waterfall::~Waterfall()
+{
+	m_reader.reset();
+	m_fft.reset();
 }
 
 std::pair<int, int> Waterfall::dataSize()
@@ -133,6 +143,8 @@ bool Waterfall::update()
 
 bool Waterfall::fill(QPixmap & pixmap)
 {
+	assert(m_colormap);
+
 	// 1.图形化.
 	auto dataSize = this->dataSize();
 
@@ -142,7 +154,7 @@ bool Waterfall::fill(QPixmap & pixmap)
 	if (m_pixmapData.size() != segments * freqs) {
 		m_pixmapData.resize(segments * freqs);
 	}
-
+	
 	// 1.a 行列转化 + 数值/色彩转换
 	for (int ti = 0; ti < segments; ti++) {
 		for (int fi = 0; fi < freqs; fi++) {
@@ -151,8 +163,8 @@ bool Waterfall::fill(QPixmap & pixmap)
 			int idx2 = (freqs - fi - 1) * segments + ti;
 
 			float val = m_datamap[idx1];
-			uint32_t color = valueToColor(val);
-			m_pixmapData[idx2] = color;
+			auto rgb = m_colormap(val, m_colorRange.first, m_colorRange.second);
+			m_pixmapData[idx2] = QColor::fromRgb(std::get<0>(rgb), std::get<1>(rgb), std::get<2>(rgb)).rgb();
 		}
 	}
 
@@ -196,8 +208,11 @@ QRectF Waterfall::totalArea()
 	QRectF rect;
 	if (m_reader) {
 		double fs = m_reader->sampleRate();
+		int step = (m_currentStep <= 0) ? m_fftLen : m_currentStep;
 
-		double maxTime = (m_reader->count() - 1) * fs;
+		double maxTime = (tool::round_down(m_reader->count() - 1, step) + std::max<int>(m_fftLen, step)) / fs;
+		//double maxTime = (tool::round_down(m_reader->count() - 1, step) + m_fftLen) * fs;
+		//double maxTime = (m_reader->count() - 1) * fs;
 		double maxFreq = (m_reader->channel() == 2) ? fs : fs / 2;
 
 		rect.setRight(maxTime);

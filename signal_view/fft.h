@@ -16,6 +16,9 @@ public:
 	~Fft();
 
 public:
+	static void cleanup();
+
+public:
 	int length() { return m_fftlen; }
 	int type() { return m_type; }
 

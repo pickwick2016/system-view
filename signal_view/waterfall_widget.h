@@ -28,13 +28,13 @@ public:
 	QRectF visibleArea();
 	void setVisibleArea(QRectF r);
 	
-	QRectF dataArea();
 
 protected:
 	virtual void paintEvent(QPaintEvent *event);
 	virtual void resizeEvent(QResizeEvent *event);
 	virtual void showEvent(QShowEvent * evt);
 	virtual void keyPressEvent(QKeyEvent * evt);
+	virtual void wheelEvent(QWheelEvent * evt);
 
 private:
 	// 将逻辑坐标转换为物理坐标.
@@ -62,5 +62,6 @@ private:
 
 private:
 	std::shared_ptr<Waterfall> m_waterfall;
-	QRectF m_totalArea, m_visibleArea, m_dataArea;
+	//QRectF m_totalArea , m_dataArea;
+	QRectF m_visibleArea;
 };

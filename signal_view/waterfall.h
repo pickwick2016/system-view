@@ -4,6 +4,9 @@
 #include <utility>
 #include <memory>
 #include <tuple>
+#include <functional>
+#include <boost/bind.hpp>
+
 #include <QRect>
 #include <QPixmap>
 
@@ -20,6 +23,7 @@ class Waterfall
 {
 public:
 	Waterfall(unsigned int fftlen = 256);
+	~Waterfall();
 
 public:
 	// 载入数据.
@@ -74,7 +78,7 @@ private:
 
 	// 求功率谱.
 	unsigned int power(void * input, float * output, unsigned int fftlen, int type);
-
+	
 
 private:
 	unsigned int m_fftLen; // fft长度.
@@ -93,6 +97,10 @@ private:
 	std::shared_ptr<Reader> m_reader;	
 
 	std::shared_ptr<Fft> m_fft; // fft 计算器.
+
+	std::pair<float, float> m_colorRange;
+
+	std::function<std::tuple<int, int, int>(float, float, float)> m_colormap;
 
 	typedef std::tuple<decltype(m_fftLen), decltype(m_currentRange), decltype(m_currentStep)> InnerState;
 	InnerState m_currState, m_prevState;

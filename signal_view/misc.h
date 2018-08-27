@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 
 /**
  * ÎÄ¼şÃèÊö.
@@ -42,6 +43,16 @@ namespace tool {
 
 		return val;
 	}
+
+
+	std::tuple<int, int, int> colormap_rainbow(float val, float vmin, float vmax);
+
+
+	std::tuple<int, int, int> colormap_gray(float val, float vmin, float vmax);
+
+
+	std::tuple<int, int, int> colormap_other(float val, float vmin, float vmax);
+
 
 } // namespace tool
 

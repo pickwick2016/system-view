@@ -10,7 +10,7 @@ Fft::~Fft()
 {
 	if (m_plan) {
 		fftw_destroy_plan(m_plan);
-		fftw_cleanup();
+		//fftw_cleanup();
 	}
 	
 	if (m_input != nullptr) {
@@ -20,6 +20,11 @@ Fft::~Fft()
 	if (m_output != nullptr) {
 		fftw_free(m_output);
 	}
+}
+
+void Fft::cleanup()
+{
+	fftw_cleanup();
 }
 
 

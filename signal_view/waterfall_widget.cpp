@@ -1,5 +1,6 @@
 #include <QPainter>
 #include <QKeyEvent>
+#include <QWheelEvent>
 #include <assert.h>
 
 #include "waterfall_widget.h"
@@ -24,10 +25,10 @@ bool WaterfallWidget::load(QString filename, int type, double samplerate)
 
 	bool loaded = m_waterfall->load(filename.toStdString(), type, samplerate);
 	if (loaded) {
-		m_totalArea = m_waterfall->totalArea();
-		m_visibleArea = m_totalArea;
+		//m_totalArea = m_waterfall->totalArea();
+		m_visibleArea = m_waterfall->totalArea();
 
-		m_dataArea = m_totalArea;		
+		//m_dataArea = m_totalArea;		
 	}
 
 	return loaded;
@@ -44,7 +45,7 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 {
 	QPainter painter(this);
 
-	painter.setRenderHint(QPainter::Antialiasing);
+	painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
 	QRect bound = rect();
 	painter.fillRect(bound, QColor::fromRgb(0, 0, 0));
@@ -53,14 +54,14 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 	QRect viewport = rect(); // 控件视口（像素，设备）
 	QRectF visibleArea = m_visibleArea;
 
-	if (m_waterfall->prepare(visibleArea, 100)) {
+	if (m_waterfall->prepare(visibleArea, 200)) {
 		painter.setClipRect(viewport);
 
 		QRectF pixmapArea = m_waterfall->currentArea();
-		QRectF drawArea = map(pixmapArea, visibleArea, viewport);
 		QPixmap & pixmap = m_waterfall->pixmap();
 		QRect pixmapRect = pixmap.rect();
 		
+		QRectF drawArea = map(pixmapArea, visibleArea, viewport);
 		painter.drawPixmap(drawArea, pixmap, pixmapRect);
 
 		painter.setClipRect(QRect());
@@ -79,7 +80,7 @@ void WaterfallWidget::showEvent(QShowEvent * evt)
 
 QRectF WaterfallWidget::totalArea()
 {
-	return m_totalArea;
+	return m_waterfall->totalArea();
 }
 
 QRectF WaterfallWidget::visibleArea()
@@ -92,10 +93,7 @@ void WaterfallWidget::setVisibleArea(QRectF r)
 	m_visibleArea = r.normalized();
 }
 
-QRectF WaterfallWidget::dataArea()
-{
-	return m_dataArea;
-}
+
 
 QRectF WaterfallWidget::map(QRectF worldB, QRectF worldA, QRectF viewA2)
 {
@@ -107,9 +105,26 @@ QRectF WaterfallWidget::map(QRectF worldB, QRectF worldA, QRectF viewA2)
 	double startX = viewA.left() + (worldB.left() - worldA.left()) * ratioX;
 	double startY = viewA.top() + (worldB.top() - worldA.top()) * ratioY;
 
-	QRectF ret(QPointF(startX, startY), QSize(worldB.width() * ratioX, worldB.height() * ratioY));
+	QRectF ret(QPointF(startX, startY), QSizeF(worldB.width() * ratioX, worldB.height() * ratioY));
 
 	return ret;
+}
+
+void WaterfallWidget::wheelEvent(QWheelEvent * evt)
+{
+	auto angles = evt->angleDelta();
+
+	if (! angles.isNull()) {
+
+		if (angles.ry() > 0) {
+			operate(HorzZoomIn, 0.1);
+		}
+		else {
+			operate(HorzZoomOut, 0.1);
+		}
+	}
+
+	evt->accept();
 }
 
 void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
@@ -150,24 +165,30 @@ void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 	case Qt::Key_Q:
 		operate(Reset);
 		break;
+
+	default:
+		return;
 	}
+
+	evt->accept();
 }
 
 void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 {
+	auto totalArea = this->totalArea();
 	bool dirty = false;
 	double value;
 
 	switch (type) {
 	case Reset:
-		if (m_visibleArea != m_totalArea) {
-			m_visibleArea = m_totalArea;
+		if (m_visibleArea != totalArea) {
+			m_visibleArea = totalArea;
 			dirty = true;
 		}
 		break;
 
 	case Left:
-		value = std::max<double>(m_visibleArea.left() - m_visibleArea.width() * param, m_totalArea.left());
+		value = std::max<double>(m_visibleArea.left() - m_visibleArea.width() * param, totalArea.left());
 		if (value != m_visibleArea.left()) {
 			m_visibleArea.moveLeft(value);
 			dirty = true;
@@ -175,7 +196,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		break;
 
 	case Right:
-		value = std::min<double>(m_visibleArea.right() + m_visibleArea.width() * param, m_totalArea.right());
+		value = std::min<double>(m_visibleArea.right() + m_visibleArea.width() * param, totalArea.right());
 		if (value != m_visibleArea.right()) {
 			m_visibleArea.moveRight(value);
 			dirty = true;
@@ -183,7 +204,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		break;
 
 	case Up:
-		value = std::max<double>(m_visibleArea.top() - m_visibleArea.height() * param, m_totalArea.top());
+		value = std::max<double>(m_visibleArea.top() - m_visibleArea.height() * param, totalArea.top());
 		if (value != m_visibleArea.top()) {
 			m_visibleArea.moveTop(value);
 			dirty = true;
@@ -191,7 +212,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		break;
 
 	case Down:
-		value = std::min<double>(m_visibleArea.bottom() + m_visibleArea.height() * param, m_totalArea.bottom());
+		value = std::min<double>(m_visibleArea.bottom() + m_visibleArea.height() * param, totalArea.bottom());
 		if (value != m_visibleArea.bottom()) {
 			m_visibleArea.moveBottom(value);
 			dirty = true;
@@ -199,7 +220,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		break;
 
 	case HorzZoomIn:
-		value = std::min<double>(m_visibleArea.width() * (1 + param), m_totalArea.width());
+		value = std::min<double>(m_visibleArea.width() * (1 + param), totalArea.width());
 		if (value != m_visibleArea.width()) {
 			auto center = m_visibleArea.center();
 			m_visibleArea.setWidth(value);
@@ -209,7 +230,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		break;
 
 	case HorzZoomOut:
-		value = std::min<double>(m_visibleArea.width() * (1 - param), m_totalArea.width());
+		value = std::min<double>(m_visibleArea.width() * (1 - param), totalArea.width());
 		if (value != m_visibleArea.width()) {
 			auto center = m_visibleArea.center();
 			m_visibleArea.setWidth(value);
@@ -219,7 +240,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		break;
 
 	case VertZoomIn:
-		value = std::min<double>(m_visibleArea.height() * (1 + param), m_totalArea.height());
+		value = std::min<double>(m_visibleArea.height() * (1 + param), totalArea.height());
 		if (value != m_visibleArea.height()) {
 			auto center = m_visibleArea.center();
 			m_visibleArea.setHeight(value);
@@ -229,7 +250,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		break;
 
 	case VertZoomOut:
-		value = std::min<double>(m_visibleArea.height() * (1 - param), m_totalArea.height());
+		value = std::min<double>(m_visibleArea.height() * (1 - param), totalArea.height());
 		if (value != m_visibleArea.height()) {
 			auto center = m_visibleArea.center();
 			m_visibleArea.setHeight(value);
@@ -243,10 +264,12 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 	}
 
 	if (dirty) {
-		m_visibleArea = limitArea(m_visibleArea, m_totalArea);
+		m_visibleArea = limitArea(m_visibleArea, totalArea);
 		repaint();
 	}
 }
+
+
 
 QRectF WaterfallWidget::limitArea(QRectF vis, QRectF total, bool keepsize)
 {
