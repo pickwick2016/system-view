@@ -52,6 +52,9 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 
 	// 绘制频谱数据.
 	QRect viewport = rect(); // 控件视口（像素，设备）
+	//viewport.setWidth(viewport.width() + 1);
+	//viewport.setHeight(viewport.height() + 1);
+
 	QRectF visibleArea = m_visibleArea;
 
 	if (m_waterfall->prepare(visibleArea, 200)) {
@@ -117,10 +120,10 @@ void WaterfallWidget::wheelEvent(QWheelEvent * evt)
 	if (! angles.isNull()) {
 
 		if (angles.ry() > 0) {
-			operate(HorzZoomIn, 0.1);
+			executeCommand(FreqZoomIn, 0.1);
 		}
 		else {
-			operate(HorzZoomOut, 0.1);
+			executeCommand(FreqZoomOut, 0.1);
 		}
 	}
 
@@ -129,41 +132,58 @@ void WaterfallWidget::wheelEvent(QWheelEvent * evt)
 
 void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 {
+	bool ctrl = evt->modifiers() & Qt::ControlModifier;
+	bool shift = evt->modifiers() & Qt::ShiftModifier;
+	bool alt = evt->modifiers() & Qt::AltModifier;
+
+	//KeyState ks = { evt->key(), ctrl, shift, alt};
+	//
+	//for (auto & shortcut : m_shortcuts) {
+	//	if (shortcut.second == ks) {
+	//		auto cmd = shortcut.first;
+	//		m_commands[cmd]();
+	//		break;
+	//	}
+	//}
+
+	//evt->accept();
+
+
 	switch (evt->key()) {
 	case Qt::Key_Left:
-		operate(Left, 0.1);
+		executeCommand(TimeBackward, 0.1);
 		break;
 
 	case Qt::Key_A:
-		operate(HorzZoomIn, 0.1);
+		executeCommand(FreqZoomIn, 0.1);
 		break;
 
 	case Qt::Key_Right:
-		operate(Right, 0.1);
+		executeCommand(TimeBackward, 0.1);
 		break;
 
 	case Qt::Key_D:
-		operate(HorzZoomOut, 0.1);
+		executeCommand(FreqZoomOut, 0.1);
 		break;
 
 	case Qt::Key_Up:
-		operate(Up, 0.1);
+		executeCommand(FreqForward, 0.1);
 		break;
 
 	case Qt::Key_S:
-		operate(VertZoomIn, 0.1);
+		executeCommand(TimeZoomIn, 0.1);
 		break;
 
 	case Qt::Key_Down:
-		operate(Down, 0.1);
+		executeCommand(FreqBackward, 0.1);
 		break;
 
 	case Qt::Key_W:
-		operate(VertZoomOut, 0.1);
+		executeCommand(TimeZoomOut, 0.1);
 		break;
 
 	case Qt::Key_Q:
-		operate(Reset);
+		executeCommand(Reset);
 		break;
 
 	default:
@@ -173,7 +193,7 @@ void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 	evt->accept();
 }
 
-void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
+void WaterfallWidget::executeCommand(WaterfallWidget::Command type, double param)
 {
 	auto totalArea = this->totalArea();
 	bool dirty = false;
@@ -187,7 +207,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case Left:
+	case TimeForward:
 		value = std::max<double>(m_visibleArea.left() - m_visibleArea.width() * param, totalArea.left());
 		if (value != m_visibleArea.left()) {
 			m_visibleArea.moveLeft(value);
@@ -195,7 +215,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case Right:
+	case TimeBackward:
 		value = std::min<double>(m_visibleArea.right() + m_visibleArea.width() * param, totalArea.right());
 		if (value != m_visibleArea.right()) {
 			m_visibleArea.moveRight(value);
@@ -203,7 +223,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case Up:
+	case FreqForward:
 		value = std::max<double>(m_visibleArea.top() - m_visibleArea.height() * param, totalArea.top());
 		if (value != m_visibleArea.top()) {
 			m_visibleArea.moveTop(value);
@@ -211,7 +231,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case Down:
+	case FreqBackward:
 		value = std::min<double>(m_visibleArea.bottom() + m_visibleArea.height() * param, totalArea.bottom());
 		if (value != m_visibleArea.bottom()) {
 			m_visibleArea.moveBottom(value);
@@ -219,7 +239,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case HorzZoomIn:
+	case FreqZoomIn:
 		value = std::min<double>(m_visibleArea.width() * (1 + param), totalArea.width());
 		if (value != m_visibleArea.width()) {
 			auto center = m_visibleArea.center();
@@ -229,7 +249,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case HorzZoomOut:
+	case FreqZoomOut:
 		value = std::min<double>(m_visibleArea.width() * (1 - param), totalArea.width());
 		if (value != m_visibleArea.width()) {
 			auto center = m_visibleArea.center();
@@ -239,7 +259,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case VertZoomIn:
+	case TimeZoomIn:
 		value = std::min<double>(m_visibleArea.height() * (1 + param), totalArea.height());
 		if (value != m_visibleArea.height()) {
 			auto center = m_visibleArea.center();
@@ -249,7 +269,7 @@ void WaterfallWidget::operate(WaterfallWidget::OpType type, double param)
 		}
 		break;
 
-	case VertZoomOut:
+	case TimeZoomOut:
 		value = std::min<double>(m_visibleArea.height() * (1 - param), totalArea.height());
 		if (value != m_visibleArea.height()) {
 			auto center = m_visibleArea.center();

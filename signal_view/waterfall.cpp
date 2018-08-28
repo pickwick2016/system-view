@@ -231,7 +231,8 @@ QRectF Waterfall::currentArea()
 		double ts = 1 / fs;
 
 		double timeStart = m_currentRange.first * ts;
-		double timeEnd = (m_currentRange.second + m_align) * ts; // TODO :CHECK
+		double timeEnd = (tool::round_down(m_currentRange.second, m_currentStep)
+			+ std::max<int>(m_fftLen, m_currentStep)) * ts; // TODO :CHECK
 
 		double freqEnd = (m_reader->channel() == 2) ? fs : fs / 2;
 

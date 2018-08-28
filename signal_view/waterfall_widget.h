@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <QWidget>
 
 class Waterfall;
@@ -10,6 +11,27 @@ class Waterfall;
 class WaterfallWidget : public QWidget
 {
 	Q_OBJECT
+
+public:
+	// 预定义操作类型.
+	enum Command
+	{
+		TimeBackward,
+		TimeForward,
+		TimeZoomIn,
+		TimeZoomOut,
+		FreqForward,
+		FreqBackward,
+		FreqZoomIn,
+		FreqZoomOut,
+		ColorMaxUp,
+		ColorMaxDown,
+		ColorMinUp,
+		ColorMinDown,
+		ColorRangeUp,
+		ColorRangeDown,
+		Reset,
+	};
 
 public:
 	WaterfallWidget(QWidget *parent = nullptr);
@@ -23,11 +45,14 @@ public:
 	void close();
 
 public:
+	// 数据空间（逻辑）大小.
 	QRectF totalArea();
 
+	// 可视空间（逻辑）大小.
 	QRectF visibleArea();
+
+	// 设置可视空间（逻辑）
 	void setVisibleArea(QRectF r);
-	
 
 protected:
 	virtual void paintEvent(QPaintEvent *event);
@@ -41,27 +66,16 @@ private:
 	QRectF map(QRectF world, QRectF worldR, QRectF viewR);
 
 private:
-	// 预定义操作类型.
-	enum OpType
-	{
-		Left,
-		Right,
-		Up,
-		Down,
-		VertZoomIn,
-		VertZoomOut,
-		HorzZoomIn,
-		HorzZoomOut,
-		Reset,
-	};
-
 	// 执行预定义操作.
-	void operate(OpType type, double param = 0);
+	void executeCommand(Command type, double param = 0);
 
 	QRectF limitArea(QRectF vis, QRectF total, bool keepsize = true);
 
 private:
 	std::shared_ptr<Waterfall> m_waterfall;
-	//QRectF m_totalArea , m_dataArea;
 	QRectF m_visibleArea;
+
+	typedef std::tuple<int, bool, bool, bool> KeyState;
+	std::map<Command, KeyState> m_shortcuts;
+	std::map<Command, std::function<void()>> m_commands;
 };
