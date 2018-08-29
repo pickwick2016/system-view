@@ -14,6 +14,9 @@ public:
 	~OpenDialog();
 
 public:
+	void initFile(QString filename);
+
+public:
 	FileDescription fileDesc();
 
 public slots:

@@ -19,7 +19,7 @@ public:
 	virtual ~MainWindow();
 
 public slots:
-	void openFile();
+	void openFile(QString filename = "");
 	void closeFile();
 
 	void subWindowDestroyed(QObject * obj);
@@ -29,6 +29,8 @@ public:
 
 protected:
 	void showEvent(QShowEvent * evt);
+	void dragEnterEvent(QDragEnterEvent *evt);
+	void dropEvent(QDropEvent *evt);
 
 private:
 	QWidget * makeSubWidget(ProjectItem * item);

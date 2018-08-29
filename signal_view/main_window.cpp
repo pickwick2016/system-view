@@ -3,6 +3,10 @@
 
 #include <QMdiSubWindow>
 #include <QTreeWidget>
+#include <QDropEvent> 
+#include <QDragEnterEvent>
+#include <QMimeData>
+#include <QFileInfo>
 
 #include "main_window.h"
 #include "open_dialog.h"
@@ -17,6 +21,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui.setupUi(this);
 
+	this->setAcceptDrops(true);
+
 	m_project = Application::instance()->project();
 
 	// 连接用户消息-槽.
@@ -29,8 +35,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(ui.actionProjectPane, SIGNAL(toggled(bool)), projectPane, SLOT(setVisible(bool)));
 	connect(projectPane, SIGNAL(visibilityChanged(bool)), ui.actionProjectPane, SLOT(setChecked(bool)));
-	Application::instance()->project()->m_signal.connect(boost::bind(& ProjectWidget::onProject, projectPane, _1, _2));
-	
+	Application::instance()->project()->m_signal.connect(boost::bind(&ProjectWidget::onProject, projectPane, _1, _2));
+
 }
 
 MainWindow::~MainWindow()
@@ -49,11 +55,12 @@ void MainWindow::showEvent(QShowEvent * evt)
 #endif //_DEBUG
 }
 
-void MainWindow::openFile()
+void MainWindow::openFile(QString filename)
 {
 	assert(m_project);
 
 	OpenDialog dialog;
+	dialog.initFile(filename);
 	if (dialog.exec()) {
 		// 添加文件.
 		auto desc = dialog.fileDesc();
@@ -116,7 +123,7 @@ QWidget * MainWindow::makeSubWidget(ProjectItem * item)
 		std::auto_ptr<WaterfallWidget> widget(new WaterfallWidget());
 
 		auto desc = fileitem->desc();
-		if (widget->load(QString::fromStdString(desc.fileName), desc.dataType, desc.sampleRate))	{
+		if (widget->load(QString::fromStdString(desc.fileName), desc.dataType, desc.sampleRate)) {
 			return widget.release();
 		}
 	}
@@ -135,4 +142,31 @@ void MainWindow::subWindowDestroyed(QObject * obj)
 			return;
 		}
 	}
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *evt)
+{
+	if (evt->mimeData()->hasFormat("text/uri-list")) {
+		evt->acceptProposedAction();
+	}
+	else {
+		evt->ignore();
+	}
+}
+
+void MainWindow::dropEvent(QDropEvent *evt)
+{
+	QList<QUrl> urls = evt->mimeData()->urls();
+	if (!urls.empty()) {
+		QString fileName = urls.at(0).toLocalFile();
+		QFileInfo info(fileName);
+		if (info.isFile() && info.exists()) {
+			openFile(fileName);
+		}
+	}
+
+	//foreach(QUrl url, urls) {
+	//	QString file_name = url.toLocalFile();
+	//	//textEdit->append(file_name);
+	//}
 }

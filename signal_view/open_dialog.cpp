@@ -17,6 +17,17 @@ OpenDialog::~OpenDialog()
 {
 }
 
+void OpenDialog::initFile(QString filename)
+{
+	if (filename.isEmpty())
+		return;
+
+	QFileInfo info(filename);
+	if (info.exists() && info.isFile()) {
+		ui.editFilename->setText(filename);
+	}
+}
+
 void OpenDialog::openFile()
 {
 	QString filename = QFileDialog::getOpenFileName(this);
