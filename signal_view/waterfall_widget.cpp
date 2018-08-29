@@ -5,6 +5,7 @@
 
 #include "waterfall_widget.h"
 #include "waterfall.h"
+#include "misc.h"
 
 WaterfallWidget::WaterfallWidget(QWidget *parent)
 	: QWidget(parent)
@@ -57,7 +58,7 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 
 	QRectF visibleArea = m_visibleArea;
 
-	if (m_waterfall->prepare(visibleArea, 200)) {
+	if (m_waterfall->prepare(visibleArea, { 200, 100 })) {
 		painter.setClipRect(viewport);
 
 		QRectF pixmapArea = m_waterfall->currentArea();
@@ -136,50 +137,49 @@ void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 	bool shift = evt->modifiers() & Qt::ShiftModifier;
 	bool alt = evt->modifiers() & Qt::AltModifier;
 
-	//KeyState ks = { evt->key(), ctrl, shift, alt};
-	//
-	//for (auto & shortcut : m_shortcuts) {
-	//	if (shortcut.second == ks) {
-	//		auto cmd = shortcut.first;
-	//		m_commands[cmd]();
-	//		break;
-	//	}
-	//}
-
-	//evt->accept();
-
-
 	switch (evt->key()) {
 	case Qt::Key_Left:
-		executeCommand(TimeBackward, 0.1);
-		break;
-
-	case Qt::Key_A:
-		executeCommand(FreqZoomIn, 0.1);
+		if (ctrl)
+			executeCommand(FreqZoomIn, 0.1);
+		else
+			executeCommand(TimeBackward, 0.1);
 		break;
 
 	case Qt::Key_Right:
-		executeCommand(TimeBackward, 0.1);
-		break;
-
-	case Qt::Key_D:
-		executeCommand(FreqZoomOut, 0.1);
+		if (ctrl)
+			executeCommand(FreqZoomOut, 0.1);
+		else
+			executeCommand(TimeForward, 0.1);
 		break;
 
 	case Qt::Key_Up:
-		executeCommand(FreqForward, 0.1);
-		break;
-
-	case Qt::Key_S:
-		executeCommand(TimeZoomIn, 0.1);
+		if (ctrl)
+			executeCommand(FreqZoomIn, 0.1);
+		else
+			executeCommand(FreqForward, 0.1);
 		break;
 
 	case Qt::Key_Down:
-		executeCommand(FreqBackward, 0.1);
+		if (ctrl)
+			executeCommand(FreqZoomOut, 0.1);
+		else
+			executeCommand(FreqBackward, 0.1);
+		break;
+
+	case Qt::Key_A:
+		executeCommand(ColorRangeUp);
+		break;
+
+	case Qt::Key_D:
+		executeCommand(ColorRangeDown);
+		break;
+			
+	case Qt::Key_S:
+		executeCommand(ColorRangeDec);
 		break;
 
 	case Qt::Key_W:
-		executeCommand(TimeZoomOut, 0.1);
+		executeCommand(ColorRangeAdd);
 		break;
 
 	case Qt::Key_Q:
@@ -279,6 +279,31 @@ void WaterfallWidget::executeCommand(WaterfallWidget::Command type, double param
 		}
 		break;
 
+	case ColorRangeDown:
+	case ColorRangeUp:
+	{
+		auto rng = m_waterfall->colorRange();
+		double diff = (type == ColorRangeUp) ? 5 : -5;
+		rng.first += diff;
+		rng.second += diff;
+		m_waterfall->setColorRange(rng);
+		dirty = true;
+		break;
+	}
+
+	case ColorRangeAdd:
+	case ColorRangeDec:
+	{
+		auto rng = m_waterfall->colorRange();
+		float width = tool::length(rng);
+		float diff = (type == ColorRangeAdd) ? width * 0.05 : width * -0.05;
+		rng.first -= diff;
+		rng.second += diff;
+		m_waterfall->setColorRange(rng);
+		dirty = true;
+		break;
+	}
+	
 	default:
 		return;
 	}

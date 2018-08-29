@@ -39,10 +39,10 @@ public:
 	 * 2.如果准备完成，可以调用pixmap(), datamap(), 获取当前数据；调用pixmapSize()、datamapSize()获取图像尺寸.
 	 *
 	 * @param visible 当前可视范围.
-	 * @param segmentHint 建议分段的数量.
+	 * @param sizeHint 建议分段的数量(segmentHint, freqHint).
 	 * @return 操作结果.
 	 */
-	bool prepare(QRectF visible, int segmentHint = 0);
+	bool prepare(QRectF visible, std::pair<int, int> sizeHint = { 0, 0 });
 
 	// 当前数据的时间和频率范围（逻辑值，横向时间，纵向频谱）.
 	QRectF currentArea();
@@ -59,35 +59,42 @@ public:
 	// 频谱数据大小 (freq_count, segment_count)
 	std::pair<int, int> dataSize();
 
+	std::pair<float, float> colorRange() { return m_colorRange; }
+
+	void setColorRange(std::pair<float, float> rng);
 		
 private:
 	// 请求一定时间范围的数据.
-	bool query(double start, double end, unsigned int countHint = 0);
+	bool query(QRectF visible, std::pair<int, int> sizeHint = { 0, 0 });
 
 	// 根据当前状态，重新载入数据.
-	bool update();
+	bool reloadBuffer();
+
+	bool bufferToPixmap();
 
 	// 清空状态.
 	void clear();
 
-	// 填充图形.
-	bool fill(QPixmap & pixmap);
+
 
 	// 数值转化为色彩.
 	uint32_t valueToColor(float val);
 
 	// 求功率谱.
 	unsigned int power(void * input, float * output, unsigned int fftlen, int type);
+
+	// 频率点数.
+	unsigned int freqCount();
 	
 
 private:
-	unsigned int m_fftLen; // fft长度.
-	unsigned int m_align; // 对齐.
+	unsigned int m_stepAlign; // 对齐.
 
-	unsigned int m_freqCount; // fft 长度（载入时确定）.
+	std::vector<unsigned int> m_fftHints;
 
 	std::pair<unsigned int, unsigned int> m_currentRange; //起始点范围（动态确定）
 	unsigned int m_currentStep;	// 步长（动态确定）.
+	unsigned int m_currentFft; // fft长度.
 
 	QPixmap m_pixmap;
 	std::vector<unsigned int> m_pixmapData;
@@ -102,8 +109,9 @@ private:
 
 	std::function<std::tuple<int, int, int>(float, float, float)> m_colormap;
 
-	typedef std::tuple<decltype(m_fftLen), decltype(m_currentRange), decltype(m_currentStep)> InnerState;
-	InnerState m_currState, m_prevState;
+	typedef std::tuple<decltype(m_currentFft), decltype(m_currentRange), decltype(m_currentStep)> BufferState;
+	BufferState m_currState, m_prevState;
+	std::pair<float, float> m_prevColorRange;
 };
 
 

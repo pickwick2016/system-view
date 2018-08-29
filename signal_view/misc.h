@@ -20,6 +20,18 @@ public:
 };
 
 namespace tool {
+
+	template <class T>
+	std::pair<T, T> normalize(const std::pair<T, T> & val)
+	{
+		return { std::min<T>(val.first, val.second), std::max<T>(val.first, val.second) };
+	}
+
+	template <class T>
+	T length(const std::pair<T, T> & val)
+	{
+		return val.second - val.first;
+	}
 	
 	inline unsigned int round_down(unsigned int count, unsigned int seg)
 	{
