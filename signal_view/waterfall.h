@@ -22,7 +22,7 @@
 class Waterfall
 {
 public:
-	Waterfall(unsigned int fftlen = 256);
+	Waterfall(unsigned int fftlen = 128);
 	~Waterfall();
 
 public:
@@ -62,6 +62,8 @@ public:
 	std::pair<float, float> colorRange() { return m_colorRange; }
 
 	void setColorRange(std::pair<float, float> rng);
+
+	std::pair<float, float> currentValueRange() { return m_valueRange; }
 		
 private:
 	// 请求一定时间范围的数据.
@@ -74,9 +76,7 @@ private:
 
 	// 清空状态.
 	void clear();
-
-
-
+	
 	// 数值转化为色彩.
 	uint32_t valueToColor(float val);
 
@@ -106,6 +106,7 @@ private:
 	std::shared_ptr<Fft> m_fft; // fft 计算器.
 
 	std::pair<float, float> m_colorRange;
+	std::pair<float, float> m_valueRange;
 
 	std::function<std::tuple<int, int, int>(float, float, float)> m_colormap;
 

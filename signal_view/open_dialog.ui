@@ -140,6 +140,31 @@
            <string>real-64</string>
           </property>
          </item>
+         <item>
+          <property name="text">
+           <string>int-8 : 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>int-16 : 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>int-32 : 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>real-32 : 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>real-64 : 2</string>
+          </property>
+         </item>
         </widget>
        </item>
        <item>

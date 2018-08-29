@@ -120,6 +120,11 @@ public:
         comboType->addItem(QString());
         comboType->addItem(QString());
         comboType->addItem(QString());
+        comboType->addItem(QString());
+        comboType->addItem(QString());
+        comboType->addItem(QString());
+        comboType->addItem(QString());
+        comboType->addItem(QString());
         comboType->setObjectName(QStringLiteral("comboType"));
 
         horizontalLayout_5->addWidget(comboType);
@@ -182,6 +187,11 @@ public:
         comboType->setItemText(2, QApplication::translate("OpenDialog", "int-32", nullptr));
         comboType->setItemText(3, QApplication::translate("OpenDialog", "real-32", nullptr));
         comboType->setItemText(4, QApplication::translate("OpenDialog", "real-64", nullptr));
+        comboType->setItemText(5, QApplication::translate("OpenDialog", "int-8 : 2", nullptr));
+        comboType->setItemText(6, QApplication::translate("OpenDialog", "int-16 : 2", nullptr));
+        comboType->setItemText(7, QApplication::translate("OpenDialog", "int-32 : 2", nullptr));
+        comboType->setItemText(8, QApplication::translate("OpenDialog", "real-32 : 2", nullptr));
+        comboType->setItemText(9, QApplication::translate("OpenDialog", "real-64 : 2", nullptr));
 
         comboType->setCurrentText(QApplication::translate("OpenDialog", "int-8", nullptr));
         buttonOk->setText(QApplication::translate("OpenDialog", "\347\241\256\345\256\232", nullptr));

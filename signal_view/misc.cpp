@@ -67,4 +67,76 @@ namespace tool {
 		return { red * 255, green * 255, blue * 255 };
 	}
 
+	QRectF clip(QRectF r, QRectF all)
+	{
+		QRectF ret;
+		ret.setLeft(std::min<double>(r.left(), all.left()));
+		ret.setRight(std::max<double>(r.right(), all.right()));
+		ret.setTop(std::min<double>(r.top(), all.top()));
+		ret.setBottom(std::max<double>(r.bottom(), all.bottom()));
+		return ret;
+	}
+
+	QRect clip(QRect r, QRect all)
+	{
+		QRect ret;
+		ret.setLeft(std::min<int>(r.left(), all.left()));
+		ret.setRight(std::max<int>(r.right(), all.right()));
+		ret.setTop(std::min<int>(r.top(), all.top()));
+		ret.setBottom(std::max<int>(r.bottom(), all.bottom()));
+		return ret;
+	}
+
+	QRectF adjust(QRectF r, QRectF all, bool keepsize)
+	{
+		auto old = r;
+
+		auto x1x2 = range_adjust<double>({ r.left(), r.right() }, { all.left(), all.right() }, keepsize);
+		auto y1y2 = range_adjust<double>({ r.top(), r.bottom() }, { all.top(), all.bottom() }, keepsize);
+
+		return QRectF(QPointF(x1x2.first, y1y2.first), QPointF(x1x2.second, y1y2.second));
+	}
+
+	QRectF rectExpand(QRectF r, double v)
+	{
+		QRectF ret = r;
+		ret.setLeft(r.left() - v);
+		ret.setRight(r.right() + v);
+		ret.setTop(r.top() - v);
+		ret.setBottom(r.bottom() + v);
+		return ret;
+	}
+
+	QRectF rectExpandX(QRectF r, double v)
+	{
+		QRectF ret = r;
+		ret.setLeft(r.left() - v);
+		ret.setRight(r.right() + v);
+		return ret;
+	}
+
+	QRectF rectExpandY(QRectF r, double v)
+	{
+		QRectF ret = r;
+		ret.setTop(r.top() - v);
+		ret.setBottom(r.bottom() + v);
+		return ret;
+	}
+
+	QRectF rectMoveX(QRectF r, double v)
+	{
+		QRectF ret = r;
+		ret.setLeft(r.left() + v);
+		ret.setRight(r.right() + v);
+		return ret;
+	}
+
+	QRectF rectMoveY(QRectF r, double v)
+	{
+		QRectF ret = r;
+		ret.setTop(r.top() + v);
+		ret.setBottom(r.bottom() + v);
+		return ret;
+	}
+
 } // namespace tool

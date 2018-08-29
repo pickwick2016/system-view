@@ -16,6 +16,9 @@ public:
 	// 预定义操作类型.
 	enum Command
 	{
+		Reset,
+		ResetTime,
+		ResetFreq,
 		TimeBackward,
 		TimeForward,
 		TimeZoomIn,
@@ -28,11 +31,12 @@ public:
 		FreqZoomOut,
 		FreqZoomInAt,
 		FreqZoomOutAt,
+
 		ColorRangeUp,
 		ColorRangeDown,
 		ColorRangeAdd,
 		ColorRangeDec,
-		Reset,
+		ColorRangeAuto,
 	};
 
 public:
@@ -71,7 +75,9 @@ private:
 	// 执行预定义操作.
 	void executeCommand(Command type, double param = 0);
 
-	QRectF limitArea(QRectF vis, QRectF total, bool keepsize = true);
+	QRectF viewport();
+
+	QRectF setVisible(Command cmd, double param);
 
 private:
 	std::shared_ptr<Waterfall> m_waterfall;

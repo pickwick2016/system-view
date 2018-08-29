@@ -9,8 +9,8 @@ Waterfall::Waterfall(unsigned int fftlen)
 	clear();
 
 	m_fftHints = { 256, 512, 1024, 2048 };
-	m_currentFft = fftlen;
-	m_stepAlign = m_currentFft;
+	m_currentFft = m_fftHints[0];
+	m_stepAlign = 128;
 
 
 	m_reader.reset(new FileReader());
@@ -61,6 +61,22 @@ unsigned int Waterfall::power(void * input, float * output, unsigned int fftlen,
 	case DataType::Real64:
 		m_fft->power((double *)input, output, fftlen);
 		break;
+	case DataType::Int8_2:
+		m_fft->power((std::complex<char> *)input, output, fftlen);
+		break;
+	case DataType::Int16_2:
+		m_fft->power((std::complex<short> *)input, output, fftlen);
+		break;
+	case DataType::Int32_2:
+		m_fft->power((std::complex<int> *)input, output, fftlen);
+		break;
+	case DataType::Real32_2:
+		m_fft->power((std::complex<float> *)input, output, fftlen);
+		break;
+	case DataType::Real64_2:
+		m_fft->power((std::complex<double> *)input, output, fftlen);
+		break;
+		
 	default:
 		return 0;
 	}
@@ -136,8 +152,8 @@ bool Waterfall::reloadBuffer()
 		memset(tempBuffer.data(), 0, tempBuffer.size());
 
 		int readPos = m_currentRange.first + si * m_currentStep;
-		m_reader->read((void *)tempBuffer.data(), m_currentFft, readPos);
-
+		int getCount = m_reader->read((void *)tempBuffer.data(), m_currentFft, readPos);
+		
 		void * input = (void *)tempBuffer.data();
 		float * output = m_datamap.data() + si * freqs;
 		auto ret = power(input, output, m_currentFft, m_reader->type());
@@ -146,6 +162,15 @@ bool Waterfall::reloadBuffer()
 		}
 	}
 
+	if (!m_datamap.empty()) {
+		auto mm = std::minmax_element(m_datamap.begin(), m_datamap.end());
+		m_valueRange.first =  *mm.first;
+		m_valueRange.second = *mm.second;
+	}
+	else {
+		m_valueRange = { 0, 0 };
+	}
+	
 	return true;
 }
 
@@ -306,5 +331,5 @@ bool Waterfall::prepare(QRectF visible, std::pair<int, int> sizeHint)
 
 void Waterfall::setColorRange(std::pair<float, float> rng)
 {
-	m_colorRange = tool::normalize(rng);
+	m_colorRange = tool::range_normalize(rng);
 }

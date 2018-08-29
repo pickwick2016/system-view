@@ -109,6 +109,38 @@ int FileReader::itemSize()
 		return sizeof(float);
 	case Real64:
 		return sizeof(double);
+	case Int8_2:
+		return sizeof(char) * 2;
+	case Int16_2:
+		return sizeof(short) * 2;
+	case Int32_2:
+		return sizeof(int) * 2;
+	case Real32_2:
+		return sizeof(float) * 2;
+	case Real64_2:
+		return sizeof(double) * 2;
+	default:
+		return 0;
+	}
+}
+
+int FileReader::channel()
+{
+	switch (m_dataType) {
+	case Int8:
+	case Int16:
+	case Int32:
+	case Real32:
+	case Real64:
+		return 1;
+
+	case Int8_2:
+	case Int16_2:
+	case Int32_2:
+	case Real32_2:
+	case Real64_2:
+		return 2;
+
 	default:
 		return 0;
 	}

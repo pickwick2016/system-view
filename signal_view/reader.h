@@ -12,6 +12,11 @@ enum DataType
 	Int32,
 	Real32,
 	Real64,
+	Int8_2,
+	Int16_2,
+	Int32_2,
+	Real32_2,
+	Real64_2,
 };
 
 // ∂¡»°…Ë±∏.
@@ -43,6 +48,7 @@ public:
 	virtual unsigned int count();
 	virtual int type();
 	virtual int itemSize();
+	virtual int channel();
 
 public:
 	bool open(const std::string & filename, int datatype, double sampleRate = 1.0);
