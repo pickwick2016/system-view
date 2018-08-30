@@ -13,6 +13,7 @@ public:
 
 public slots:
 	void itemDoubleClicked(QListWidgetItem * item);
+	void itemChanged(QListWidgetItem * item);
 
 public:
 	void onProject(unsigned int id, int action);

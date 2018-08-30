@@ -17,6 +17,11 @@ unsigned int ProjectItem::id()
 	return m_id;
 }
 
+Project::Project()
+{
+	m_selection = 0;
+}
+
 unsigned int Project::add(ProjectItem * item)
 {
 	if (item != nullptr && find(item->id()) == nullptr) {
@@ -80,6 +85,18 @@ std::string ProjectItem::name()
 	return ret;
 }
 
+void Project::select(unsigned int id)
+{
+	unsigned int old = m_selection;
+	if (id == 0 || find(id) != nullptr) {
+		m_selection = id;
+	}
+
+	if (old != m_selection) {
+		notify(m_selection, SelectItem);
+	}
+}
+
 void Project::notify(unsigned int id, int action)
 {
 	m_signal(id, action);
@@ -117,3 +134,4 @@ std::string SignalFileItem::name2(const std::string & key)
 
 	return "";
 }
+

@@ -21,7 +21,11 @@ public:
 		RemoveItem,
 		UpdateItem,
 		ShowItem,
+		SelectItem,
 	};
+
+public:
+	Project();
 
 public:
 	unsigned int add(const std::string & filename, int sampleType, double sampleRate);
@@ -31,18 +35,21 @@ public:
 
 	void show(unsigned int id);
 
+	void select(unsigned int id);
+
+	unsigned int selection() { return m_selection; }
+
 	ProjectItem * find(unsigned int id);
 
 private:
 	void notify(unsigned int id, int action);
-
 
 public:
 	boost::signals2::signal<void(unsigned int /*id*/, int/*action*/)> m_signal;
 
 private:
 	std::vector<std::shared_ptr<ProjectItem>> m_items;
-	
+	unsigned int m_selection;	
 };
 
 

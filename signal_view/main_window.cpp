@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	// 连接用户消息-槽.
 	connect(ui.actionOpen, SIGNAL(triggered()), this, SLOT(openFile()));
+	connect(ui.actionClose, SIGNAL(triggered()), this, SLOT(closeFile()));
 	m_project->m_signal.connect(boost::bind(&MainWindow::onProject, this, _1, _2));
 
 	// 添加“项目”窗口
@@ -79,7 +80,8 @@ void MainWindow::openFile(QString filename)
 
 void MainWindow::closeFile()
 {
-
+	unsigned int sel = m_project->selection();
+	m_project->remove(sel);
 }
 
 void MainWindow::onProject(unsigned int id, int action)

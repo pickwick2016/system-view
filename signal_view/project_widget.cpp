@@ -7,7 +7,11 @@ ProjectWidget::ProjectWidget(QWidget *parent)
 {
 	ui.setupUi(this);
 
-	connect(ui.listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), this, SLOT(itemDoubleClicked(QListWidgetItem *)));
+	connect(ui.listWidget, SIGNAL(itemDoubleClicked(QListWidgetItem *)), 
+		this, SLOT(itemDoubleClicked(QListWidgetItem *)));
+
+	connect(ui.listWidget, SIGNAL(itemChanged(QListWidgetItem *)),
+		this, SLOT(itemChanged(QListWidgetItem *)));
 }
 
 ProjectWidget::~ProjectWidget()
@@ -52,6 +56,13 @@ void ProjectWidget::itemDoubleClicked(QListWidgetItem *item)
 
 	if (m_itemIds.find(item) != m_itemIds.end()) {
 		Application::instance()->project()->show(m_itemIds[item]);
+	}
+}
+
+void ProjectWidget::itemChanged(QListWidgetItem * item)
+{
+	if (m_itemIds.find(item) != m_itemIds.end()) {
+		Application::instance()->project()->select(m_itemIds[item]);
 	}
 }
 
