@@ -138,5 +138,60 @@ namespace tool {
 		ret.setBottom(r.bottom() + v);
 		return ret;
 	}
+	
+	double range_split(std::pair<double, double> rng, int countHint, std::vector<double> & ret)
+	{
+		ret.clear();
+		double len = range_length(rng);
+		double delta = range_length(rng) / countHint;
+		int k = std::floorf(std::log10f(delta));
+		double step = std::powf(10, k);
+
+		std::vector<double> steps = { step, step * 2, step * 5 };
+		std::vector<int> counts;
+		for (auto v : steps) {
+			counts.push_back((int) std::abs(len / v - countHint));
+		}
+
+		int minIdx = std::distance(counts.begin(), std::min_element(counts.begin(), counts.end()));
+		step = steps[minIdx];
+
+		double current = round_down(rng.first, step);
+		while (true) {
+			if (current > rng.second)
+				break;
+
+			if (tool::range_contain(rng, current) >= 0) {
+				ret.push_back(current);
+			}
+			current += step;
+		}
+
+		return step;
+	}
+
+	QRectF rectFlipY(QRectF r)
+	{
+		QRectF ret = r;
+		ret.setTop(r.bottom());
+		ret.setBottom(r.top());
+		return ret;
+	}
+
+	QPointF map(QPointF pa, QRectF ra, QRectF rb)
+	{
+		double x = map(pa.rx(), { ra.left(), ra.right() }, { rb.left(), rb.right() });
+		double y = map(pa.ry(), { ra.top(), ra.bottom() }, { rb.top(), rb.bottom() });
+
+		return QPointF(x, y);
+	}
+
+	QRectF map(QRectF pa, QRectF ra, QRectF rb)
+	{
+		QPointF tl = map(pa.topLeft(), ra, rb);
+		QPointF br = map(pa.bottomRight(), ra, rb);
+
+		return QRectF(tl, br);
+	}
 
 } // namespace tool

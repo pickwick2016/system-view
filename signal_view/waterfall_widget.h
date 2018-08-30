@@ -69,13 +69,18 @@ protected:
 
 private:
 	// 将逻辑坐标转换为物理坐标.
-	QRectF map(QRectF world, QRectF worldR, QRectF viewR);
+	//QRectF map(QRectF world, QRectF worldR, QRectF viewR);
+
+	void drawTimeBar(QPainter & painter);
+	void drawFreqBar(QPainter & painter);
+	void drawData(QPainter & painter);
 
 private:
 	// 执行预定义操作.
 	void executeCommand(Command type, double param = 0);
 
-	QRectF viewport();
+	// 获取不同数据的视口 0:main 1:time_bar 2:freq_bar
+	QRectF viewport(int tag = 0);
 
 	QRectF setVisible(Command cmd, double param);
 

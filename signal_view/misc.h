@@ -39,6 +39,17 @@ namespace tool {
 	QRectF rectMoveX(QRectF r, double v);
 	QRectF rectMoveY(QRectF r, double v);
 
+	QRectF rectFlipY(QRectF r);
+
+
+	template <class T>
+	T map(T valFrom, std::pair<T, T> rngFrom, std::pair<T, T> rngTo)
+	{
+		return rngTo.first + (valFrom - rngFrom.first) * range_length(rngTo) / range_length(rngFrom);
+	}
+
+	QPointF map(QPointF pa, QRectF ra, QRectF rb);
+	QRectF map(QRectF pa, QRectF ra, QRectF rb);
 
 	template <class T>
 	std::pair<T, T> range_normalize(const std::pair<T, T> & val)
@@ -65,6 +76,8 @@ namespace tool {
 		return 0;
 	}
 
+	double range_split(std::pair<double, double> rng, int countHint, std::vector<double> & ret);
+
 	template <class T>
 	std::pair<T, T> range_expand(const std::pair<T, T> & val, T dv)
 	{
@@ -80,6 +93,11 @@ namespace tool {
 	inline unsigned int round_down(unsigned int count, unsigned int seg)
 	{
 		return (count / seg) * seg;
+	}
+
+	inline double round_down(double val, double step)
+	{
+		return (int)(val / step) * step;
 	}
 
 	inline unsigned int round_up(unsigned int count, unsigned int seg)

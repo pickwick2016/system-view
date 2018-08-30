@@ -51,30 +51,129 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 	QRect bound = rect();
 	painter.fillRect(bound, QColor::fromRgb(0, 0, 0));
 
-	// 绘制频谱数据.
-	QRectF viewport = this->viewport(); // 控件视口（像素，设备）
+	drawTimeBar(painter);
+	drawFreqBar(painter);
+	drawData(painter);
+}
+
+void WaterfallWidget::drawTimeBar(QPainter & painter)
+{
+	auto bound = this->viewport(1);
+	if (bound.isEmpty())
+		return;
+
+	std::vector<double> times;
+	double step = tool::range_split({ m_visibleArea.left(), m_visibleArea.right() }, 10, times);
+	if (times.empty())
+		return;
+
+	int e = std::floorf(std::log10f(step));
+	QString fmtStr = "%.0f";
+	if (e < 0) {
+		fmtStr = QString::asprintf("%.%df", -e);
+	}
+
+	QPointF boundCenter = bound.center();
+	QRectF textRect(bound.topLeft(), QSizeF(bound.width() / 10, bound.height()));
+	painter.setClipRect(bound);
+	painter.setPen(QPen(QColor(255, 255, 255)));
+	for (auto time : times) {
+		double ptx = tool::map<double>(time,
+			{ m_visibleArea.left(), m_visibleArea.right() }, { bound.left(), bound.right() });
+		
+		painter.drawLine(QPointF(ptx, bound.bottom()), QPointF(ptx, bound.bottom() - 5));
+
+		QString text = QString::asprintf(fmtStr.toStdString().c_str(), time);
+		textRect.moveCenter({ ptx, boundCenter.ry() });
+		painter.drawText(textRect, Qt::AlignCenter, text);
+	}
+	painter.setClipRect(QRectF());
+}
+
+void WaterfallWidget::drawFreqBar(QPainter & painter)
+{
+	auto bound = this->viewport(2);
+	if (bound.isEmpty())
+		return;
+
+	std::vector<double> freqs;
+	double step = tool::range_split({ m_visibleArea.top(), m_visibleArea.bottom() }, 10, freqs);
+	if (freqs.empty())
+		return;
+
+	int e = std::floorf(std::log10f(step));
+	QString formatText = "%.0f";
+	if (e < 0) {
+		formatText = QString::asprintf("%.%df", -e);
+	}
+
+	QPointF boundCenter = bound.center();
+	QRectF textRect(bound.topLeft(), QSizeF(bound.width(), bound.height() / 10));
+	painter.setClipRect(bound);
+	painter.setPen(QPen(QColor(255, 255, 255)));
+	for (auto freq : freqs) {
+		double ptx = tool::map<double>(freq,
+			{ m_visibleArea.top(), m_visibleArea.bottom() }, { bound.bottom(), bound.top() });
+
+		painter.drawLine(QPointF(bound.left(), ptx), QPointF(bound.left() + 4, ptx));
+
+		QString text = QString::asprintf(formatText.toStdString().c_str(), freq);
+		textRect.moveCenter({ boundCenter.rx(), ptx });
+		painter.drawText(textRect, Qt::AlignCenter, text);
+	}
+	painter.setClipRect(QRectF());
+}
+
+void WaterfallWidget::drawData(QPainter & painter)
+{
+	QRectF bound = this->viewport(); // 控件视口（像素，设备）
 
 	QRectF visibleArea = m_visibleArea;
 
 	if (m_waterfall->prepare(visibleArea, { 200, 100 })) {
-		painter.setClipRect(viewport);
+		painter.setClipRect(bound);
 
 		QRectF pixmapArea = m_waterfall->currentArea();
 		QPixmap & pixmap = m_waterfall->pixmap();
 		QRect pixmapRect = pixmap.rect();
 
-		QRectF drawArea = map(pixmapArea, visibleArea, viewport);
+		QRectF drawArea = tool::map(pixmapArea, visibleArea, tool::rectFlipY(bound));
+		drawArea = tool::rectFlipY(drawArea);
 		painter.drawPixmap(drawArea, pixmap, pixmapRect);
 
 		painter.setClipRect(QRect());
 	}
 }
 
-QRectF WaterfallWidget::viewport()
+QRectF WaterfallWidget::viewport(int tag)
 {
-	QRectF ret = rect();
-	ret = tool::rectExpand(ret, -1);
-	return ret;
+	QRectF bound = rect();
+	bound = tool::rectExpand(bound, -1);
+	
+	QRectF temp;
+
+	int rightBand = 64;
+	int rightPos = bound.right() - rightBand;
+	int upBand = 24;
+	int bottomPos = bound.top() + upBand;
+
+	if (tag == 0) {
+		temp.setTopLeft(QPointF(bound.left(), bottomPos + 1));
+		temp.setBottomRight(QPointF(rightPos, bound.bottom()));
+		return temp;
+	}
+	else if (tag == 1) {
+		temp.setTopLeft(QPointF(bound.left(), bound.top()));
+		temp.setBottomRight(QPointF(rightPos, bottomPos));
+		return temp;
+	}
+	else if (tag == 2) {
+		temp.setTopLeft(QPointF(rightPos + 1, bottomPos + 1));
+		temp.setBottomRight(QPointF(bound.right(), bound.bottom()));
+		return temp;
+	}
+
+	return QRectF();
 }
 
 void WaterfallWidget::resizeEvent(QResizeEvent *event)
@@ -103,21 +202,20 @@ void WaterfallWidget::setVisibleArea(QRectF r)
 }
 
 
-
-QRectF WaterfallWidget::map(QRectF worldB, QRectF worldA, QRectF viewA2)
-{
-	QRectF viewA = viewA2;
-
-	double ratioX = viewA.width() / worldA.width();
-	double ratioY = viewA.height() / worldA.height();
-
-	double startX = viewA.left() + (worldB.left() - worldA.left()) * ratioX;
-	double startY = viewA.top() + (worldB.top() - worldA.top()) * ratioY;
-
-	QRectF ret(QPointF(startX, startY), QSizeF(worldB.width() * ratioX, worldB.height() * ratioY));
-
-	return ret;
-}
+//QRectF WaterfallWidget::map(QRectF worldB, QRectF worldA, QRectF viewA2)
+//{
+//	QRectF viewA = viewA2;
+//
+//	double ratioX = viewA.width() / worldA.width();
+//	double ratioY = viewA.height() / worldA.height();
+//
+//	double startX = viewA.left() + (worldB.left() - worldA.left()) * ratioX;
+//	double startY = viewA.top() + (worldB.top() - worldA.top()) * ratioY;
+//
+//	QRectF ret(QPointF(startX, startY), QSizeF(worldB.width() * ratioX, worldB.height() * ratioY));
+//
+//	return ret;
+//}
 
 void WaterfallWidget::wheelEvent(QWheelEvent * evt)
 {
