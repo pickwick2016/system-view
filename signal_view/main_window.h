@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 
+#include <QLabel>
 #include <QtWidgets/QMainWindow>
 #include "ui_main_window.h"
 
@@ -24,6 +25,8 @@ public slots:
 
 	void subWindowDestroyed(QObject * obj);
 
+	void positionMoved(QPointF pos);
+
 public:
 	void onProject(unsigned int id, int action);
 
@@ -41,5 +44,6 @@ private:
 	Project * m_project;
 	std::map<unsigned int, QMdiSubWindow *> m_wndOfIds;
 	//std::vector<QWidget *> m_widgets;
+	QLabel * m_statusLabel;
 
 };

@@ -5,6 +5,37 @@
 
 class Waterfall;
 
+// 预定义操作类型.
+enum WaterfallCommand
+{
+	Reset,
+	ResetTime,
+	ResetFreq,
+
+	TimeBackward,
+	TimeForward,
+	TimeZoomIn,
+	TimeZoomOut,
+	TimeZoomInAt,
+	TimeZoomOutAt,
+	FreqForward,
+	FreqBackward,
+	FreqZoomIn,
+	FreqZoomOut,
+	FreqZoomInAt,
+	FreqZoomOutAt,
+
+	ReloadSelect,
+
+	ColorRangeUp,
+	ColorRangeDown,
+	ColorRangeAdd,
+	ColorRangeDec,
+	ColorRangeAuto,
+
+	ToggleAutoFft,
+};
+
 /**
  * 时频图（瀑布图）控件.
  */
@@ -13,35 +44,14 @@ class WaterfallWidget : public QWidget
 	Q_OBJECT
 
 public:
-	// 预定义操作类型.
-	enum Command
-	{
-		Reset,
-		ResetTime,
-		ResetFreq,
-		TimeBackward,
-		TimeForward,
-		TimeZoomIn,
-		TimeZoomOut,
-		TimeZoomInAt,
-		TimeZoomOutAt,
-		FreqForward,
-		FreqBackward,
-		FreqZoomIn,
-		FreqZoomOut,
-		FreqZoomInAt,
-		FreqZoomOutAt,
-
-		ColorRangeUp,
-		ColorRangeDown,
-		ColorRangeAdd,
-		ColorRangeDec,
-		ColorRangeAuto,
-	};
-
-public:
 	WaterfallWidget(QWidget *parent = nullptr);
-	~WaterfallWidget();
+	virtual ~WaterfallWidget();
+
+signals:
+	
+	// 鼠标指向位置发生变化.
+	void positionMoved(QPointF pos);
+	
 
 public:
 	// 载入数据文件.
@@ -50,7 +60,6 @@ public:
 	// 关闭数据文件.
 	void close();
 
-public:
 	// 数据空间（逻辑）大小.
 	QRectF totalArea();
 
@@ -66,29 +75,37 @@ protected:
 	virtual void showEvent(QShowEvent * evt);
 	virtual void keyPressEvent(QKeyEvent * evt);
 	virtual void wheelEvent(QWheelEvent * evt);
+	virtual void mousePressEvent(QMouseEvent *evt);
+	virtual void mouseMoveEvent(QMouseEvent *evt);
+	virtual void mouseReleaseEvent(QMouseEvent *evt);
 
 private:
-	// 将逻辑坐标转换为物理坐标.
-	//QRectF map(QRectF world, QRectF worldR, QRectF viewR);
-
 	void drawTimeBar(QPainter & painter);
 	void drawFreqBar(QPainter & painter);
 	void drawData(QPainter & painter);
+	void drawSelection(QPainter & painter);
 
 private:
 	// 执行预定义操作.
-	void executeCommand(Command type, double param = 0);
+	void executeCommand(WaterfallCommand type, double param = 0);
 
 	// 获取不同数据的视口 0:main 1:time_bar 2:freq_bar
 	QRectF viewport(int tag = 0);
 
-	QRectF setVisible(Command cmd, double param);
+	QRectF setVisible(WaterfallCommand cmd, double param);
+
+	QRectF selectArea();
 
 private:
 	std::shared_ptr<Waterfall> m_waterfall;
 	QRectF m_visibleArea;
+	bool m_mousePressed;
+	QPointF m_startPoint, m_endPoint;
+	QPointF m_startPos, m_endPos;
 
 	typedef std::tuple<int, bool, bool, bool> KeyState;
-	std::map<Command, KeyState> m_shortcuts;
-	std::map<Command, std::function<void()>> m_commands;
+	std::map<WaterfallCommand, KeyState> m_shortcuts;
+	std::map<WaterfallCommand, std::function<void()>> m_commands;
 };
+
+

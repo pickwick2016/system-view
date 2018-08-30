@@ -10,7 +10,10 @@
 WaterfallWidget::WaterfallWidget(QWidget *parent)
 	: QWidget(parent)
 {
+	m_mousePressed = false;
 	m_waterfall.reset(new Waterfall());
+
+	setMouseTracking(true);
 }
 
 WaterfallWidget::~WaterfallWidget()
@@ -54,6 +57,7 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 	drawTimeBar(painter);
 	drawFreqBar(painter);
 	drawData(painter);
+	drawSelection(painter);
 }
 
 void WaterfallWidget::drawTimeBar(QPainter & painter)
@@ -145,6 +149,36 @@ void WaterfallWidget::drawData(QPainter & painter)
 	}
 }
 
+
+void WaterfallWidget::drawSelection(QPainter & painter)
+{
+	QRectF selection = selectArea();
+	if (! selection.isEmpty()) {
+		QRectF bound = this->viewport(); // 控件视口（像素，设备）
+		painter.setClipRect(bound);
+
+		QRectF drawArea = tool::map(selection, visibleArea(), tool::rectFlipY(bound));
+		drawArea = drawArea.normalized();
+
+		painter.setPen(QPen(QColor(255, 255, 255), 2, Qt::DotLine));
+		painter.drawRect(drawArea);
+
+		painter.setClipRect(QRectF());
+	}
+}
+
+QRectF WaterfallWidget::selectArea()
+{
+	if (m_startPos == m_endPos) {
+		return QRectF();
+	}
+
+	QRectF ret(m_startPos, m_endPos);
+	QRectF total = totalArea();
+	ret = tool::clip(ret.normalized(), total);
+	return ret;
+}
+
 QRectF WaterfallWidget::viewport(int tag)
 {
 	QRectF bound = rect();
@@ -201,55 +235,32 @@ void WaterfallWidget::setVisibleArea(QRectF r)
 	m_visibleArea = r.normalized();
 }
 
-
-//QRectF WaterfallWidget::map(QRectF worldB, QRectF worldA, QRectF viewA2)
-//{
-//	QRectF viewA = viewA2;
-//
-//	double ratioX = viewA.width() / worldA.width();
-//	double ratioY = viewA.height() / worldA.height();
-//
-//	double startX = viewA.left() + (worldB.left() - worldA.left()) * ratioX;
-//	double startY = viewA.top() + (worldB.top() - worldA.top()) * ratioY;
-//
-//	QRectF ret(QPointF(startX, startY), QSizeF(worldB.width() * ratioX, worldB.height() * ratioY));
-//
-//	return ret;
-//}
-
 void WaterfallWidget::wheelEvent(QWheelEvent * evt)
 {
 	bool ctrl = evt->modifiers() & Qt::ControlModifier;
 
 	auto pos = evt->pos();
-	m_visibleArea;
-
 	auto viewport = this->viewport();
+	auto pxy = tool::map(pos, viewport, tool::rectFlipY(m_visibleArea));
 	
-	double dx = pos.rx() - viewport.left();
-	double dy = pos.ry() - viewport.top();
-
-	double px = m_visibleArea.left() + dx / viewport.width() * m_visibleArea.width();
-	double py = m_visibleArea.top() + dy / viewport.height() * m_visibleArea.height();
-
 	auto angles = evt->angleDelta();
 
 	if (!angles.isNull()) {
 
 		if (ctrl) {
 			if (angles.ry() > 0) {
-				executeCommand(FreqZoomInAt, py);
+				executeCommand(FreqZoomInAt, pxy.ry());
 			}
 			else {
-				executeCommand(FreqZoomOutAt, py);
+				executeCommand(FreqZoomOutAt, pxy.ry());
 			}
 		}
 		else {
 			if (angles.ry() > 0) {
-				executeCommand(TimeZoomInAt, px);
+				executeCommand(TimeZoomInAt, pxy.rx());
 			}
 			else {
-				executeCommand(TimeZoomOutAt, px);
+				executeCommand(TimeZoomOutAt, pxy.rx());
 			}
 		}
 	}
@@ -264,13 +275,21 @@ void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 	bool alt = evt->modifiers() & Qt::AltModifier;
 
 	switch (evt->key()) {
+	case Qt::Key_R:
+		executeCommand(ReloadSelect);
+		break;
+
+	case Qt::Key_F:
+		executeCommand(ToggleAutoFft);
+		break;
+
 	case Qt::Key_Left:
 		if (ctrl)
 			executeCommand(TimeZoomIn, 0.1);
 		else
 			executeCommand(TimeBackward, 0.1);
 		break;
-
+		
 	case Qt::Key_Right:
 		if (ctrl)
 			executeCommand(TimeZoomOut, 0.1);
@@ -323,7 +342,7 @@ void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 	evt->accept();
 }
 
-void WaterfallWidget::executeCommand(WaterfallWidget::Command type, double param)
+void WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 {
 	bool dirty = false;
 
@@ -386,6 +405,24 @@ void WaterfallWidget::executeCommand(WaterfallWidget::Command type, double param
 		}
 		break;
 	}
+
+	case ToggleAutoFft:
+		m_waterfall->setAutoFft(!m_waterfall->isAutoFft());
+		dirty = true;
+		break;
+
+	case ReloadSelect:
+	{
+		if (! selectArea().isEmpty()) {
+			if (m_visibleArea != selectArea()) {
+				m_visibleArea = selectArea();
+				dirty = true;
+			}
+		}
+
+		break;
+	}
+
 	default:
 		return;
 	}
@@ -395,66 +432,54 @@ void WaterfallWidget::executeCommand(WaterfallWidget::Command type, double param
 	}
 }
 
+void WaterfallWidget::mousePressEvent(QMouseEvent *evt)
+{
+	if (evt->buttons() & Qt::LeftButton) {
 
+		m_mousePressed = true;
 
-//QRectF WaterfallWidget::limitArea(QRectF vis, QRectF total, bool keepsize)
-//{
-//	QRectF ret = vis;
-//	double left, right;
-//	QSizeF sz = vis.size();
-//
-//	if (ret.left() < total.left() && ret.right() > total.right()) {
-//		ret.setLeft(total.left());
-//		ret.setRight(total.right());
-//	}
-//	else {
-//		if (ret.left() < total.left()) {
-//			ret.setLeft(total.left());
-//			if (keepsize) {
-//				ret.setRight(ret.left() + vis.width());
-//			}
-//
-//			ret.setRight(std::max<double>(ret.left(), ret.right()));
-//		}
-//
-//		if (ret.right() > total.right()) {
-//			ret.setRight(total.right());
-//			if (keepsize) {
-//				ret.setLeft(ret.right() - vis.width());
-//			}
-//			ret.setLeft(std::min<double>(ret.left(), ret.right()));
-//		}
-//	}
-//
-//	if (ret.top() < total.top() && ret.bottom() > total.bottom()) {
-//		ret.setTop(total.top());
-//		ret.setBottom(total.bottom());
-//	}
-//	else {
-//		if (ret.top() < total.top()) {
-//			ret.setTop(total.top());
-//			if (keepsize) {
-//				ret.setBottom(ret.top() + vis.height());
-//			}
-//
-//			ret.setBottom(std::max<double>(ret.top(), ret.bottom()));
-//		}
-//
-//		if (ret.bottom() > total.bottom()) {
-//			ret.setBottom(total.bottom());
-//			if (keepsize) {
-//				ret.setTop(ret.bottom() - vis.height());
-//			}
-//			ret.setTop(std::min<double>(ret.top(), ret.bottom()));
-//		}
-//	}
-//
-//	ret = tool::clip(ret, total);
-//
-//	return ret;
-//}
+		bool hasSelection = (m_startPos != m_endPos);
+		
+		m_startPoint = evt->pos();
+		m_startPos = tool::map(evt->pos(), tool::rectFlipY(viewport()), visibleArea());
 
-QRectF WaterfallWidget::setVisible(WaterfallWidget::Command cmd, double param)
+		m_endPoint = m_startPoint;
+		m_endPos = m_startPos;
+
+		if (hasSelection) {
+			repaint();
+		}
+	}
+}
+
+void WaterfallWidget::mouseMoveEvent(QMouseEvent *evt)
+{
+	auto pos = evt->pos();
+	auto viewport = this->viewport(0);
+
+	if (viewport.contains(pos)) {
+		auto pos2 = tool::map(evt->pos(), tool::rectFlipY(viewport), visibleArea());
+		emit positionMoved(pos2);
+	}
+	
+	if (m_mousePressed) {
+		m_endPoint = evt->pos();
+		m_endPos = tool::map(evt->pos(), tool::rectFlipY(viewport), visibleArea());;
+		repaint();
+	}
+}
+
+void WaterfallWidget::mouseReleaseEvent(QMouseEvent *evt)
+{
+	bool hasSelection = (m_startPos != m_endPos);
+	if (m_mousePressed && hasSelection) {
+		repaint();
+	}
+
+	m_mousePressed = false;
+}
+
+QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
 {
 	QRectF ret = m_visibleArea;
 	QRectF totalArea = this->totalArea();

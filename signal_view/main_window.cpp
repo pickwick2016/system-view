@@ -7,6 +7,7 @@
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QFileInfo>
+#include <QLabel>
 
 #include "main_window.h"
 #include "open_dialog.h"
@@ -21,7 +22,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui.setupUi(this);
 
-	this->setAcceptDrops(true);
+	setAcceptDrops(true);
+
+	m_statusLabel = new QLabel();
+	m_statusLabel->setMinimumWidth(180);
+	m_statusLabel->setAlignment(Qt::AlignRight);
+	ui.statusBar->addPermanentWidget(m_statusLabel);
+
 
 	m_project = Application::instance()->project();
 
@@ -122,6 +129,8 @@ QWidget * MainWindow::makeSubWidget(ProjectItem * item)
 	if (fileitem) {
 		std::auto_ptr<WaterfallWidget> widget(new WaterfallWidget());
 
+		connect(widget.get(), SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
+
 		auto desc = fileitem->desc();
 		if (widget->load(QString::fromStdString(desc.fileName), desc.dataType, desc.sampleRate)) {
 			return widget.release();
@@ -169,4 +178,10 @@ void MainWindow::dropEvent(QDropEvent *evt)
 	//	QString file_name = url.toLocalFile();
 	//	//textEdit->append(file_name);
 	//}
+}
+
+void MainWindow::positionMoved(QPointF pos)
+{
+	QString str = QString::asprintf("%f : %f", pos.rx(), pos.ry());
+	m_statusLabel->setText(str);
 }

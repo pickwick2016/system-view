@@ -19,12 +19,24 @@ Waterfall::Waterfall(unsigned int fftlen)
 	m_colorRange = { -40, 80 };
 
 	m_colormap = boost::bind(tool::colormap_other, _1, _2, _3);
+
+	m_isAutoFft = false;
+	m_fixFft = 256;
 }
 
 Waterfall::~Waterfall()
 {
 	m_reader.reset();
 	m_fft.reset();
+}
+
+void Waterfall::setAutoFft(bool on, int fftlen)
+{
+	m_isAutoFft = on;
+
+	if (!m_isAutoFft && fftlen > 0) {
+		m_fixFft = fftlen;
+	}
 }
 
 std::pair<int, int> Waterfall::dataSize()
@@ -90,23 +102,28 @@ bool Waterfall::query(QRectF visible, std::pair<int, int> sizeHint)
 	double fs = m_reader->sampleRate();
 
 	// 1.调整频率分段信息.
-	int freqHint = sizeHint.second;
-	if (freqHint > 0) {
-		double freqStep = visible.height() / freqHint;
+	if (m_isAutoFft) {
+		int freqHint = sizeHint.second;
+		if (freqHint > 0) {
+			double freqStep = visible.height() / freqHint;
 
-		double fs2 = fs / (m_reader->channel() == 1 ? 2 : 1);
+			double fs2 = fs / (m_reader->channel() == 1 ? 2 : 1);
 
-		m_currentFft = m_fftHints.back();
-		for (int i = 0; i < m_fftHints.size(); i++) {
-			double step = fs2 / m_fftHints[i];
-			if (step < freqStep) {
-				m_currentFft = m_fftHints[i];
-				break;
+			m_currentFft = m_fftHints.back();
+			for (int i = 0; i < m_fftHints.size(); i++) {
+				double step = fs2 / m_fftHints[i];
+				if (step < freqStep) {
+					m_currentFft = m_fftHints[i];
+					break;
+				}
 			}
 		}
 	}
-
+	else {
+		m_currentFft = m_fixFft;
+	}
 	
+
 	// 2.调整时间分段信息.
 	unsigned int pos1 = floor(visible.left() * fs);
 	unsigned int pos2 = floor(visible.right() * fs);

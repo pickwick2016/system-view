@@ -64,6 +64,9 @@ public:
 	void setColorRange(std::pair<float, float> rng);
 
 	std::pair<float, float> currentValueRange() { return m_valueRange; }
+
+	void setAutoFft(bool on, int fftlen = 256);
+	bool isAutoFft() { return m_isAutoFft; }
 		
 private:
 	// 请求一定时间范围的数据.
@@ -113,6 +116,9 @@ private:
 	typedef std::tuple<decltype(m_currentFft), decltype(m_currentRange), decltype(m_currentStep)> BufferState;
 	BufferState m_currState, m_prevState;
 	std::pair<float, float> m_prevColorRange;
+
+	bool m_isAutoFft;
+	unsigned int m_fixFft;
 };
 
 

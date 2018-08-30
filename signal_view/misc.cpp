@@ -70,10 +70,10 @@ namespace tool {
 	QRectF clip(QRectF r, QRectF all)
 	{
 		QRectF ret;
-		ret.setLeft(std::min<double>(r.left(), all.left()));
-		ret.setRight(std::max<double>(r.right(), all.right()));
-		ret.setTop(std::min<double>(r.top(), all.top()));
-		ret.setBottom(std::max<double>(r.bottom(), all.bottom()));
+		ret.setLeft(std::max<double>(r.left(), all.left()));
+		ret.setRight(std::min<double>(r.right(), all.right()));
+		ret.setTop(std::max<double>(r.top(), all.top()));
+		ret.setBottom(std::min<double>(r.bottom(), all.bottom()));
 		return ret;
 	}
 
