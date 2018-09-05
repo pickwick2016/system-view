@@ -32,6 +32,7 @@ public:
 	virtual int type() { return DataType::Real32; }
 	virtual int itemSize() { return sizeof(float); }
 	virtual int channel() { return 1; }
+	virtual double maxFreq() { return (channel() == 2) ? sampleRate() : sampleRate() / 2; }
 };
 
 // 文件数据源.

@@ -1,10 +1,10 @@
 #include <assert.h>
 
+
 #include "application.h"
 #include "project.h"
 
 #include "fft.h"
-
 
 Application * Application::instance()
 {

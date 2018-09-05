@@ -17,7 +17,7 @@ OpenDialog::~OpenDialog()
 {
 }
 
-void OpenDialog::initFile(QString filename)
+void OpenDialog::initContent(QString filename)
 {
 	if (filename.isEmpty())
 		return;
@@ -37,22 +37,22 @@ void OpenDialog::openFile()
 	}
 }
 
-FileDescription OpenDialog::fileDesc()
+FileInfo OpenDialog::fileInfo()
 {
 	try {
-		FileDescription desc;
-		desc.fileName = ui.editFilename->text().toStdString();
-		desc.sampleRate = ui.editRate->text().toDouble();
-		desc.dataType = ui.comboType->currentIndex();
+		FileInfo info;
+		info.fileName = ui.editFilename->text().toStdString();
+		info.sampleRate = ui.editRate->text().toDouble();
+		info.dataType = ui.comboType->currentIndex();
 
-		if (desc.isValid()) {
-			return desc;
+		if (info.isValid()) {
+			return info;
 		}
 		else {
-			return FileDescription();
+			return FileInfo();
 		}
 	}
 	catch (...) {
-		return FileDescription();
+		return FileInfo();
 	}
 }

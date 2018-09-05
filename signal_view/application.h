@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 class Project;
 
@@ -20,7 +21,7 @@ public:
 	void uninitialize();
 
 	Project * project();
-
+	
 private:
 	std::shared_ptr<Project> m_project;
 };

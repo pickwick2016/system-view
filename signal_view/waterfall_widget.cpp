@@ -14,6 +14,9 @@ WaterfallWidget::WaterfallWidget(QWidget *parent)
 	m_waterfall.reset(new Waterfall());
 
 	setMouseTracking(true);
+	setMinimumSize(QSize(100, 75));
+
+	initShortcuts();
 }
 
 WaterfallWidget::~WaterfallWidget()
@@ -21,18 +24,34 @@ WaterfallWidget::~WaterfallWidget()
 	assert(m_waterfall);
 
 	m_waterfall.reset();
+	m_shortcuts.clear();
+}
+
+void WaterfallWidget::load(std::shared_ptr<Reader> reader)
+{
+	m_waterfall->load(reader);
+
+	bool loaded = m_waterfall->isLoaded();
+	if (loaded) {
+		m_visibleArea = m_waterfall->totalArea();
+	}
+	else {
+		m_visibleArea = QRectF();
+	}
 }
 
 bool WaterfallWidget::load(QString filename, int type, double samplerate)
 {
 	assert(m_waterfall);
 
-	bool loaded = m_waterfall->load(filename.toStdString(), type, samplerate);
+	m_waterfall->load(filename.toStdString(), type, samplerate);
+	
+	bool loaded = m_waterfall->isLoaded();
 	if (loaded) {
-		//m_totalArea = m_waterfall->totalArea();
 		m_visibleArea = m_waterfall->totalArea();
-
-		//m_dataArea = m_totalArea;		
+	}
+	else {
+		m_visibleArea = QRectF();
 	}
 
 	return loaded;
@@ -169,11 +188,11 @@ void WaterfallWidget::drawSelection(QPainter & painter)
 
 QRectF WaterfallWidget::selectArea()
 {
-	if (m_startPos == m_endPos) {
+	if (m_dragStartPos == m_dragEndPos) {
 		return QRectF();
 	}
 
-	QRectF ret(m_startPos, m_endPos);
+	QRectF ret(m_dragStartPos, m_dragEndPos);
 	QRectF total = totalArea();
 	ret = tool::clip(ret.normalized(), total);
 	return ret;
@@ -230,9 +249,18 @@ QRectF WaterfallWidget::visibleArea()
 	return m_visibleArea;
 }
 
-void WaterfallWidget::setVisibleArea(QRectF r)
+void WaterfallWidget::setVisibleArea(QRectF r, bool redraw)
 {
+	QRectF oldArea = m_visibleArea;
 	m_visibleArea = r.normalized();
+
+	if (oldArea != m_visibleArea) {
+		if (redraw) {
+			update(); //repaint();
+		}
+
+		emit visibleChanged(m_visibleArea);
+	}
 }
 
 void WaterfallWidget::wheelEvent(QWheelEvent * evt)
@@ -274,75 +302,23 @@ void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 	bool shift = evt->modifiers() & Qt::ShiftModifier;
 	bool alt = evt->modifiers() & Qt::AltModifier;
 
-	switch (evt->key()) {
-	case Qt::Key_R:
-		executeCommand(ReloadSelect);
-		break;
+	KeyState ks = { evt->key(), ctrl, shift, alt };
+	bool processed = false;
 
-	case Qt::Key_F:
-		executeCommand(ToggleAutoFft);
-		break;
-
-	case Qt::Key_Left:
-		if (ctrl)
-			executeCommand(TimeZoomIn, 0.1);
-		else
-			executeCommand(TimeBackward, 0.1);
-		break;
-		
-	case Qt::Key_Right:
-		if (ctrl)
-			executeCommand(TimeZoomOut, 0.1);
-		else
-			executeCommand(TimeForward, 0.1);
-		break;
-
-	case Qt::Key_Up:
-		if (ctrl)
-			executeCommand(FreqZoomIn, 0.1);
-		else
-			executeCommand(FreqForward, 0.1);
-		break;
-
-	case Qt::Key_Down:
-		if (ctrl)
-			executeCommand(FreqZoomOut, 0.1);
-		else
-			executeCommand(FreqBackward, 0.1);
-		break;
-
-	case Qt::Key_A:
-		executeCommand(ColorRangeUp);
-		break;
-
-	case Qt::Key_D:
-		executeCommand(ColorRangeDown);
-		break;
-
-	case Qt::Key_S:
-		executeCommand(ColorRangeDec);
-		break;
-
-	case Qt::Key_W:
-		executeCommand(ColorRangeAdd);
-		break;
-
-	case Qt::Key_O:
-		executeCommand(ColorRangeAuto);
-		break;
-
-	case Qt::Key_Q:
-		executeCommand(Reset);
-		break;
-
-	default:
-		return;
+	for (auto kv : m_shortcuts) {
+		if (kv.second == ks) {
+			CommandState cs = kv.first;
+			processed = executeCommand(cs.first, cs.second);
+			break;
+		}
 	}
 
-	evt->accept();
+	if (processed) {
+		evt->accept();
+	}
 }
 
-void WaterfallWidget::executeCommand(WaterfallCommand type, double param)
+bool WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 {
 	bool dirty = false;
 
@@ -364,10 +340,7 @@ void WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 	case FreqZoomOutAt:
 	{
 		auto visible = setVisible(type, param);
-		if (visible != m_visibleArea) {
-			m_visibleArea = visible;
-			dirty = true;
-		}
+		setVisibleArea(visible);
 		break;
 	}
 
@@ -399,7 +372,7 @@ void WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 	{
 		std::pair<float, float> rng = m_waterfall->currentValueRange();
 		if (rng != std::pair<float, float>(0, 0)) {
-			float val = tool::range_length(rng) * 0.2;
+			float val = tool::range_length(rng) * param;
 			m_waterfall->setColorRange({ rng.first - val, rng.second + val });
 			dirty = true;
 		}
@@ -412,24 +385,20 @@ void WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 		break;
 
 	case ReloadSelect:
-	{
 		if (! selectArea().isEmpty()) {
-			if (m_visibleArea != selectArea()) {
-				m_visibleArea = selectArea();
-				dirty = true;
-			}
+			setVisibleArea(selectArea());
 		}
-
 		break;
-	}
 
 	default:
-		return;
+		return false;
 	}
 
 	if (dirty) {
 		repaint();
 	}
+
+	return true;
 }
 
 void WaterfallWidget::mousePressEvent(QMouseEvent *evt)
@@ -438,13 +407,13 @@ void WaterfallWidget::mousePressEvent(QMouseEvent *evt)
 
 		m_mousePressed = true;
 
-		bool hasSelection = (m_startPos != m_endPos);
+		bool hasSelection = (m_dragStartPos != m_dragEndPos);
 		
-		m_startPoint = evt->pos();
-		m_startPos = tool::map(evt->pos(), tool::rectFlipY(viewport()), visibleArea());
+		m_dragStartPoint = evt->pos();
+		m_dragStartPos = tool::map(evt->pos(), tool::rectFlipY(viewport()), visibleArea());
 
-		m_endPoint = m_startPoint;
-		m_endPos = m_startPos;
+		m_dragEndPoint = m_dragStartPoint;
+		m_dragEndPos = m_dragStartPos;
 
 		if (hasSelection) {
 			repaint();
@@ -463,15 +432,15 @@ void WaterfallWidget::mouseMoveEvent(QMouseEvent *evt)
 	}
 	
 	if (m_mousePressed) {
-		m_endPoint = evt->pos();
-		m_endPos = tool::map(evt->pos(), tool::rectFlipY(viewport), visibleArea());;
+		m_dragEndPoint = evt->pos();
+		m_dragEndPos = tool::map(evt->pos(), tool::rectFlipY(viewport), visibleArea());;
 		repaint();
 	}
 }
 
 void WaterfallWidget::mouseReleaseEvent(QMouseEvent *evt)
 {
-	bool hasSelection = (m_startPos != m_endPos);
+	bool hasSelection = (m_dragStartPos != m_dragEndPos);
 	if (m_mousePressed && hasSelection) {
 		repaint();
 	}
@@ -500,19 +469,19 @@ QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
 		break;
 
 	case TimeForward:
-		ret = tool::rectMoveX(m_visibleArea, m_visibleArea.width() * param);
+		ret = tool::rectMoveX(m_visibleArea, m_visibleArea.width() * 0.1);
 		break;
 
 	case TimeBackward:
-		ret = tool::rectMoveX(m_visibleArea, - m_visibleArea.width() * param);
+		ret = tool::rectMoveX(m_visibleArea, - m_visibleArea.width() * 0.1);
 		break;
 
 	case TimeZoomIn:
-		ret = tool::rectExpandX(m_visibleArea, m_visibleArea.width() * param);
+		ret = tool::rectExpandX(m_visibleArea, m_visibleArea.width() * 0.1);
 		break;
 
 	case TimeZoomOut:
-		ret = tool::rectExpandX(m_visibleArea, -m_visibleArea.width() * param);
+		ret = tool::rectExpandX(m_visibleArea, -m_visibleArea.width() * 0.1);
 		break;
 
 	case TimeZoomInAt:
@@ -534,19 +503,19 @@ QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
 		break;
 
 	case FreqForward:
-		ret = tool::rectMoveY(m_visibleArea, m_visibleArea.height() * param);
+		ret = tool::rectMoveY(m_visibleArea, m_visibleArea.height() * 0.1);
 		break;
 
 	case FreqBackward:
-		ret = tool::rectMoveY(m_visibleArea, -m_visibleArea.height() * param);
+		ret = tool::rectMoveY(m_visibleArea, -m_visibleArea.height() * 0.1);
 		break;
 	
 	case FreqZoomIn:
-		ret = tool::rectExpandY(m_visibleArea, m_visibleArea.height() * param);
+		ret = tool::rectExpandY(m_visibleArea, m_visibleArea.height() * 0.1);
 		break;
 
 	case FreqZoomOut:
-		ret = tool::rectExpandY(m_visibleArea, -m_visibleArea.height() * param);
+		ret = tool::rectExpandY(m_visibleArea, -m_visibleArea.height() * 0.1);
 		break;
 
 	case FreqZoomInAt:
@@ -575,4 +544,66 @@ QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
 	
 	ret = tool::adjust(ret, totalArea);
 	return ret;
+}
+
+bool WaterfallWidget::setParam(const QString & name, QVariant value)
+{
+	bool result;
+
+	if (name.compare("fft", Qt::CaseInsensitive)) {
+		double fft = value.toDouble(&result);
+		if (result) {
+			int fftlen = std::roundf(tool::round_pow2(fft));
+			fftlen = std::max<int>(128, fftlen);
+			m_waterfall->setAutoFft(false, fftlen);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+QVariant WaterfallWidget::getParam(const QString & name)
+{
+	QVariant ret;
+
+	if (name.compare("fft", Qt::CaseInsensitive)) {
+	}
+
+	return ret;
+}
+
+void WaterfallWidget::initShortcuts()
+{
+	m_shortcuts.clear();
+
+	// 1.³õÊ¼»¯¿ì½Ý¼ü.
+	//m_shortcuts[Reset] = { Qt::Key_Left, false, false, false };
+	//m_shortcuts[ResetTime] = { Qt::Key_Left, false, false, false };
+	//m_shortcuts[ResetFreq] = { Qt::Key_Left, false, false, false };
+
+	m_shortcuts[{TimeBackward, 0.05}] = { Qt::Key_Left, false, false, false };
+	m_shortcuts[{TimeForward, 0.051}] = { Qt::Key_Right, false, false, false };
+	m_shortcuts[{TimeZoomIn, 0.1}] = { Qt::Key_Left, true, false, false };
+	m_shortcuts[{TimeZoomOut, 0.1}] = { Qt::Key_Right, true, false, false };
+	//m_shortcuts[TimeZoomInAt] = { Qt::Key_Left, false, false, false };
+	//m_shortcuts[TimeZoomOutAt] = { Qt::Key_Left, false, false, false };
+
+	m_shortcuts[{FreqBackward, 0.05}] = { Qt::Key_Down, false, false, false };
+	m_shortcuts[{FreqForward, 0.05}] = { Qt::Key_Up, false, false, false };
+	m_shortcuts[{FreqZoomIn, 0.1}] = { Qt::Key_Down, true, false, false };
+	m_shortcuts[{FreqZoomOut, 0.1}] = { Qt::Key_Up, true, false, false };
+	//m_shortcuts[FreqZoomInAt] = { Qt::Key_Left, false, false, false };
+	//m_shortcuts[FreqZoomOutAt] = { Qt::Key_Left, false, false, false };
+	
+	m_shortcuts[{ReloadSelect, 0.05}] = { Qt::Key_R, false, false, false };
+
+	//m_shortcuts[ColorRangeUp] = { Qt::Key_Left, false, false, false };
+	//m_shortcuts[ColorRangeDown] = { Qt::Key_Left, false, false, false };
+	//m_shortcuts[ColorRangeAdd] = { Qt::Key_Left, false, false, false };
+	//m_shortcuts[ColorRangeDec] = { Qt::Key_Left, false, false, false };
+
+	m_shortcuts[{ColorRangeAuto, 0.2}] = { Qt::Key_C, false, false, false };
+
+	m_shortcuts[{ToggleAutoFft, 0}] = { Qt::Key_F, false, false, false };
 }

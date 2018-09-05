@@ -8,6 +8,8 @@
 #include <QMimeData>
 #include <QFileInfo>
 #include <QLabel>
+#include <QSplitter>
+#include <QTextEdit>
 
 #include "main_window.h"
 #include "open_dialog.h"
@@ -16,6 +18,8 @@
 #include "application.h"
 #include "waterfall_widget.h"
 #include "reader.h"
+#include "python_script.h"
+#include "freq_widget.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -29,22 +33,36 @@ MainWindow::MainWindow(QWidget *parent)
 	m_statusLabel->setAlignment(Qt::AlignRight);
 	ui.statusBar->addPermanentWidget(m_statusLabel);
 
+	//setDockNestingEnabled(true);
+	//setDockOptions(QMainWindow::ForceTabbedDocks);
 
 	m_project = Application::instance()->project();
 
 	// 连接用户消息-槽.
 	connect(ui.actionOpen, SIGNAL(triggered()), this, SLOT(openFile()));
 	connect(ui.actionClose, SIGNAL(triggered()), this, SLOT(closeFile()));
+
+	connect(ui.actionFreq, SIGNAL(triggered()), this, SLOT(toggleFreqView()));
+	connect(ui.actionWave, SIGNAL(triggered()), this, SLOT(toggleWaveView()));
+	connect(ui.actionWaterfall, SIGNAL(triggered()), this, SLOT(toggleWaterfallView()));
+	
+	connect(ui.actionScript1, SIGNAL(triggered()), this, SLOT(doScript1()));
+
 	m_project->m_signal.connect(boost::bind(&MainWindow::onProject, this, _1, _2));
 
-	// 添加“项目”窗口
+	//// 添加“项目”窗口
 	auto projectPane = new ProjectWidget(this);
 	addDockWidget(Qt::LeftDockWidgetArea, projectPane);
-
-	connect(ui.actionProjectPane, SIGNAL(toggled(bool)), projectPane, SLOT(setVisible(bool)));
+	//
+	connect(ui.actionProjectPane, SIGNAL(triggered(bool)), projectPane, SLOT(setVisible(bool)));
 	connect(projectPane, SIGNAL(visibilityChanged(bool)), ui.actionProjectPane, SLOT(setChecked(bool)));
+
 	Application::instance()->project()->m_signal.connect(boost::bind(&ProjectWidget::onProject, projectPane, _1, _2));
 
+
+#ifdef _DEBUG
+	m_project->add("c:/data/bingle.dat", DataType::Real32, 1);
+#endif //_DEBUG
 }
 
 MainWindow::~MainWindow()
@@ -56,11 +74,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::showEvent(QShowEvent * evt)
 {
-	assert(m_project);
 
-#ifdef _DEBUG
-	m_project->add("c:/data/bingle.dat", DataType::Real32, 1);
-#endif //_DEBUG
 }
 
 void MainWindow::openFile(QString filename)
@@ -68,10 +82,10 @@ void MainWindow::openFile(QString filename)
 	assert(m_project);
 
 	OpenDialog dialog;
-	dialog.initFile(filename);
+	dialog.initContent(filename);
 	if (dialog.exec()) {
 		// 添加文件.
-		auto desc = dialog.fileDesc();
+		auto desc = dialog.fileInfo();
 		if (desc.isValid()) {
 			m_project->add(new SignalFileItem(desc));
 		}
@@ -103,7 +117,6 @@ void MainWindow::onProject(unsigned int id, int action)
 
 				subWindow->setAttribute(Qt::WA_DeleteOnClose);
 				subWindow->setWindowTitle(QString::fromStdString(pitem->name2("simple")));
-				//subWindow->setToolTip(QString::fromStdString(pitem->name2("hint")));
 				subWindow->show();
 			}
 		}
@@ -129,14 +142,29 @@ QWidget * MainWindow::makeSubWidget(ProjectItem * item)
 
 	SignalFileItem * fileitem = dynamic_cast<SignalFileItem *>(item);
 	if (fileitem) {
-		std::auto_ptr<WaterfallWidget> widget(new WaterfallWidget());
+		QSplitter * splitter = new QSplitter(Qt::Vertical, this);
+				
+		WaterfallWidget * widget = new WaterfallWidget();
+		connect(widget, SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
+		auto desc = fileitem->fileInfo();
+		widget->load(fileitem->reader());
+		//widget->load(QString::fromStdString(desc.fileName), desc.dataType, desc.sampleRate);
 
-		connect(widget.get(), SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
+		splitter->insertWidget(0, widget);
+		splitter->setStretchFactor(0, 1);
 
-		auto desc = fileitem->desc();
-		if (widget->load(QString::fromStdString(desc.fileName), desc.dataType, desc.sampleRate)) {
-			return widget.release();
-		}
+		FreqWidget * widget2 = new FreqWidget();
+		widget2->load(fileitem->reader());
+		splitter->insertWidget(1, widget2);
+		splitter->setStretchFactor(1, 1);
+
+		widget->setFocusPolicy(Qt::StrongFocus);
+		connect(widget, SIGNAL(visibleChanged(QRectF)), widget2, SLOT(visibleChanged(QRectF)));
+
+		//QTextEdit * widget3 = new QTextEdit();
+		//splitter->insertWidget(2, widget3);
+
+		return splitter;
 	}
 
 	return nullptr;
@@ -175,15 +203,34 @@ void MainWindow::dropEvent(QDropEvent *evt)
 			openFile(fileName);
 		}
 	}
-
-	//foreach(QUrl url, urls) {
-	//	QString file_name = url.toLocalFile();
-	//	//textEdit->append(file_name);
-	//}
 }
 
 void MainWindow::positionMoved(QPointF pos)
 {
 	QString str = QString::asprintf("%f : %f", pos.rx(), pos.ry());
 	m_statusLabel->setText(str);
+}
+
+void MainWindow::doScript1()
+{
+	Python python;
+	bool result = python.run("test_plugin_01", "process");
+	if (result) {
+
+	}
+ }
+
+void MainWindow::toggleFreqView()
+{
+
+}
+
+void MainWindow::toggleWaveView()
+{
+
+}
+
+void MainWindow::toggleWaterfallView()
+{
+
 }

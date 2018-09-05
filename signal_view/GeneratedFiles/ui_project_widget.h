@@ -10,6 +10,7 @@
 #define UI_PROJECT_WIDGET_H
 
 #include <QtCore/QVariant>
+#include <QtGui/QIcon>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QListWidget>
@@ -30,6 +31,11 @@ public:
         if (ProjectWidget->objectName().isEmpty())
             ProjectWidget->setObjectName(QStringLiteral("ProjectWidget"));
         ProjectWidget->resize(285, 488);
+        ProjectWidget->setTabletTracking(false);
+        QIcon icon;
+        icon.addFile(QStringLiteral(":/MainWindow/icon/project.png"), QSize(), QIcon::Normal, QIcon::Off);
+        ProjectWidget->setWindowIcon(icon);
+        ProjectWidget->setFloating(false);
         widget = new QWidget();
         widget->setObjectName(QStringLiteral("widget"));
         verticalLayout = new QVBoxLayout(widget);

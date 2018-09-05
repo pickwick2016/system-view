@@ -5,9 +5,11 @@
 #include <memory>
 #include <boost/signals2.hpp>
 
+#include "file_info.h"
 #include "misc.h"
 
 class ProjectItem;
+class Reader;
 
 /**
  * 项目管理器.
@@ -79,15 +81,17 @@ class SignalFileItem : public ProjectItem
 {
 public:
 	SignalFileItem();
-	SignalFileItem(FileDescription desc);
+	SignalFileItem(FileInfo info);
 
 public:
 	virtual std::string name();
 	virtual std::string name2(const std::string & key);
 
 public:
-	FileDescription desc() { return m_desc; }
+	FileInfo fileInfo() { return m_info; }
+	std::shared_ptr<Reader> reader() { return m_reader; }
 
 private:
-	FileDescription m_desc;
+	FileInfo m_info;
+	std::shared_ptr<Reader> m_reader;
 };

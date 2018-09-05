@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WATERFALL_H
+#define WATERFALL_H
 
 #include <vector>
 #include <utility>
@@ -28,6 +29,10 @@ public:
 public:
 	// 载入数据.
 	bool load(const std::string & filename, int type, double samplerate);
+
+	void load(std::shared_ptr<Reader> reader);
+
+	bool isLoaded();
 	
 	// 关闭数据.
 	void close();
@@ -121,5 +126,6 @@ private:
 	unsigned int m_fixFft;
 };
 
+#endif //WATERFALL_H
 
 

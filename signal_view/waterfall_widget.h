@@ -1,13 +1,17 @@
-#pragma once
+#ifndef WATERFALL_WIDGET_H
+#define WATERFALL_WIDGET_H
 
 #include <functional>
+#include <memory>
 #include <QWidget>
 
+class Reader;
 class Waterfall;
 
 // 预定义操作类型.
 enum WaterfallCommand
 {
+	None,
 	Reset,
 	ResetTime,
 	ResetFreq,
@@ -48,14 +52,18 @@ public:
 	virtual ~WaterfallWidget();
 
 signals:
-	
 	// 鼠标指向位置发生变化.
 	void positionMoved(QPointF pos);
 	
+	// 当前可视区域发生了变化.
+	void visibleChanged(QRectF area);
 
 public:
 	// 载入数据文件.
 	bool load(QString filename, int type, double samplerate);
+
+	// 设置读取器.
+	void load(std::shared_ptr<Reader> reader);
 	
 	// 关闭数据文件.
 	void close();
@@ -67,7 +75,16 @@ public:
 	QRectF visibleArea();
 
 	// 设置可视空间（逻辑）
-	void setVisibleArea(QRectF r);
+	void setVisibleArea(QRectF r, bool redraw = true);
+
+	// 当前选区.
+	QRectF selectArea();
+		
+	// 设置参数.
+	bool setParam(const QString & name, QVariant value);
+	
+	// 获取参数.
+	QVariant getParam(const QString & name);
 
 protected:
 	virtual void paintEvent(QPaintEvent *event);
@@ -87,25 +104,32 @@ private:
 
 private:
 	// 执行预定义操作.
-	void executeCommand(WaterfallCommand type, double param = 0);
+	bool executeCommand(WaterfallCommand type, double param = 0);
 
 	// 获取不同数据的视口 0:main 1:time_bar 2:freq_bar
 	QRectF viewport(int tag = 0);
 
+	// 修改可视区.
 	QRectF setVisible(WaterfallCommand cmd, double param);
 
-	QRectF selectArea();
+	// 初始化命令列表.
+	void initShortcuts();
 
 private:
 	std::shared_ptr<Waterfall> m_waterfall;
-	QRectF m_visibleArea;
-	bool m_mousePressed;
-	QPointF m_startPoint, m_endPoint;
-	QPointF m_startPos, m_endPos;
+	
+	QRectF m_visibleArea; // 当前可视区.
+	
+	bool m_mousePressed; // 鼠标是否拖拽.
+	QPointF m_dragStartPoint, m_dragEndPoint; // 拖拽鼠标起止点
+	QPointF m_dragStartPos, m_dragEndPos; // 拖拽逻辑起止点
 
-	typedef std::tuple<int, bool, bool, bool> KeyState;
-	std::map<WaterfallCommand, KeyState> m_shortcuts;
-	std::map<WaterfallCommand, std::function<void()>> m_commands;
+	typedef std::tuple<int, bool, bool, bool> KeyState; // 键盘状态.
+	typedef std::pair<WaterfallCommand, double> CommandState; // 命令状态.
+
+	std::map<CommandState, KeyState> m_shortcuts; // 命令快捷键表.
 };
+
+#endif //WATERFALL_WIDGET_H
 
 

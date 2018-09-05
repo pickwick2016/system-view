@@ -36,7 +36,7 @@ unsigned int Project::add(ProjectItem * item)
 
 unsigned int Project::add(const std::string & filename, int sampleType, double sampleRate)
 {
-	FileDescription desc;
+	FileInfo desc;
 	desc.fileName = filename;
 	desc.dataType = sampleType;
 	desc.sampleRate = sampleRate;
@@ -104,31 +104,31 @@ void Project::notify(unsigned int id, int action)
 
 SignalFileItem::SignalFileItem()
 {
-
 }
 
-SignalFileItem::SignalFileItem(FileDescription desc)
-	: m_desc(desc)
+SignalFileItem::SignalFileItem(FileInfo info)
+	: m_info(info)
 {
+	m_reader = m_info.createReader();
 }
 
 std::string SignalFileItem::name()
 {
-	assert(m_desc.isValid());
+	assert(m_info.isValid());
 
-	return m_desc.fileName;
+	return m_info.fileName;
 }
 
 std::string SignalFileItem::name2(const std::string & key)
 {
 	if (boost::algorithm::iequals(key, "hint")) {
 		std::string ret;
-		ret = (boost::format("path : %s\nsps : %f") % m_desc.fileName % m_desc.sampleRate).str();
+		ret = (boost::format("path : %s\nsps : %f") % m_info.fileName % m_info.sampleRate).str();
 		return ret;
 	}
 
 	if (boost::algorithm::iequals(key, "simple")) {
-		QFileInfo info(QString::fromStdString(m_desc.fileName));
+		QFileInfo info(QString::fromStdString(m_info.fileName));
 		return info.fileName().toStdString();
 	}
 

@@ -10,6 +10,16 @@
     <height>488</height>
    </rect>
   </property>
+  <property name="tabletTracking">
+   <bool>false</bool>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="main_window.qrc">
+    <normaloff>:/MainWindow/icon/project.png</normaloff>:/MainWindow/icon/project.png</iconset>
+  </property>
+  <property name="floating">
+   <bool>false</bool>
+  </property>
   <property name="windowTitle">
    <string>项目</string>
   </property>
@@ -34,6 +44,8 @@
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="main_window.qrc"/>
+ </resources>
  <connections/>
 </ui>

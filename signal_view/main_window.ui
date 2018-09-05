@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Signal View</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="main_window.qrc">
+    <normaloff>:/MainWindow/icon/monitor.png</normaloff>:/MainWindow/icon/monitor.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <property name="leftMargin">
@@ -64,6 +68,7 @@
     <property name="title">
      <string>帮助</string>
     </property>
+    <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
@@ -71,7 +76,23 @@
     </property>
     <addaction name="actionProjectPane"/>
    </widget>
+   <widget class="QMenu" name="menu_4">
+    <property name="title">
+     <string>插件</string>
+    </property>
+    <addaction name="actionScript1"/>
+   </widget>
+   <widget class="QMenu" name="menu_5">
+    <property name="title">
+     <string>视图</string>
+    </property>
+    <addaction name="actionWaterfall"/>
+    <addaction name="actionWave"/>
+    <addaction name="actionFreq"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menu_5"/>
+   <addaction name="menu_4"/>
    <addaction name="menu_3"/>
    <addaction name="menu_2"/>
   </widget>
@@ -88,16 +109,28 @@
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/document-open.png</normaloff>:/MainWindow/icon/document-open.png</iconset>
+   </property>
    <property name="text">
     <string>打开</string>
    </property>
   </action>
   <action name="actionClose">
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/document-remove.png</normaloff>:/MainWindow/icon/document-remove.png</iconset>
+   </property>
    <property name="text">
     <string>关闭</string>
    </property>
   </action>
   <action name="actionExit">
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/system-quit.png</normaloff>:/MainWindow/icon/system-quit.png</iconset>
+   </property>
    <property name="text">
     <string>退出</string>
    </property>
@@ -109,8 +142,41 @@
    <property name="checked">
     <bool>true</bool>
    </property>
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/project.png</normaloff>:/MainWindow/icon/project.png</iconset>
+   </property>
    <property name="text">
     <string>项目</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/information_2.png</normaloff>:/MainWindow/icon/information_2.png</iconset>
+   </property>
+   <property name="text">
+    <string>关于</string>
+   </property>
+  </action>
+  <action name="actionScript1">
+   <property name="text">
+    <string>脚本</string>
+   </property>
+  </action>
+  <action name="actionFreq">
+   <property name="text">
+    <string>瞬时频谱</string>
+   </property>
+  </action>
+  <action name="actionWaterfall">
+   <property name="text">
+    <string>瀑布图</string>
+   </property>
+  </action>
+  <action name="actionWave">
+   <property name="text">
+    <string>波形图</string>
    </property>
   </action>
  </widget>

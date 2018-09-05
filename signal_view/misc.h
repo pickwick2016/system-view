@@ -2,25 +2,12 @@
 
 #include <string>
 #include <tuple>
+#include <vector>
 #include <algorithm>
+#include <memory>
+#include <utility>
 
 #include <QRect>
-
-/**
- * ÎÄ¼şÃèÊö.
- */
-struct FileDescription
-{
-public:
-	FileDescription(const std::string & filename = "", int datatype = 0, double samplerate = 1);
-
-	bool isValid() const;
-
-public:
-	std::string fileName;
-	double  sampleRate;
-	int dataType;
-};
 
 namespace tool {
 
@@ -104,6 +91,8 @@ namespace tool {
 	{
 		return ((count + seg - 1) / seg) * seg;
 	}
+
+	double round_pow2(double value);
 
 	std::tuple<int, int, int> colormap_rainbow(float val, float vmin, float vmax);
 

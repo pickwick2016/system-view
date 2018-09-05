@@ -13,7 +13,7 @@ Waterfall::Waterfall(unsigned int fftlen)
 	m_stepAlign = 128;
 
 
-	m_reader.reset(new FileReader());
+	//m_reader.reset(new FileReader());
 	m_fft.reset(new Fft(m_currentFft));
 
 	m_colorRange = { -40, 80 };
@@ -225,32 +225,41 @@ bool Waterfall::bufferToPixmap()
 	return true;
 }
 
-
+void Waterfall::load(std::shared_ptr<Reader> reader)
+{
+	m_reader = reader;
+}
 
 bool Waterfall::load(const std::string & filename, int type, double samplerate)
 {
-	assert(m_reader);
-
 	close();
 
-	FileReader * freader = dynamic_cast<FileReader *>(m_reader.get());
-	if (! freader || ! freader->open(filename, type, samplerate)) {
-		return false;
+	std::auto_ptr<FileReader> freader(new FileReader());
+	if (freader->open(filename, type, samplerate)) {
+		m_reader.reset(freader.release());
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 void Waterfall::close()
 {
-	assert(m_reader);
+	//assert(m_reader);
 
-	FileReader * freader = dynamic_cast<FileReader *>(m_reader.get());
-	if (freader) {
-		freader->close();
-	}
+	//FileReader * freader = dynamic_cast<FileReader *>(m_reader.get());
+	//if (freader) {
+	//	freader->close();
+	//}
+
+	m_reader.reset();
 
 	clear();
+}
+
+bool Waterfall::isLoaded()
+{
+	return m_reader.get() != nullptr;
 }
 
 unsigned int Waterfall::freqCount()
