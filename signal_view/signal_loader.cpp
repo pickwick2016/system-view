@@ -95,7 +95,7 @@ void WaveLoader::reload1(State state)
 	int count = end - start + 1;
 
 	std::vector<double> temp(count * 2);
-	int readCount = readAsReal64(m_reader.get(), temp.data(), count, start);
+	int readCount = m_reader->readAsReal64(temp.data(), count, start);
 	
 	if (m_reader->channel() == 1) {
 		m_values[0].resize(readCount);
@@ -129,7 +129,7 @@ void WaveLoader::reload2(State state)
 	m_values[1].resize(count * 2);
 
 	for (int pos = start, i = 0; pos <= end; pos += step, i++) {
-		int readCount = readAsReal64(m_reader.get(), temp.data(), chunk, pos);
+		int readCount = m_reader->readAsReal64(temp.data(), chunk, pos);
 		
 		if (m_reader->channel() == 1) {
 			auto mm = tool::minmax(temp.begin(), temp.begin() + readCount);

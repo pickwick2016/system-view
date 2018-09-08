@@ -78,6 +78,9 @@
     <ClCompile Include="wave_widget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="data_type.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="main_window.h">
@@ -141,6 +144,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="signal_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="data_type.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

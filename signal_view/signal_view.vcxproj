@@ -114,6 +114,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="application.cpp" />
+    <ClCompile Include="data_type.cpp" />
     <ClCompile Include="fft.cpp" />
     <ClCompile Include="file_info.cpp" />
     <ClCompile Include="freq_widget.cpp" />
@@ -142,6 +143,7 @@
     <QtRcc Include="main_window.qrc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="data_type.h" />
     <ClInclude Include="fft.h" />
     <QtMoc Include="wave_widget.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(FFTW_DIR)\.;$(PYTHON_DIR)\.;$(BOOST_DIR)\.;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtWebEngine;$(QTDIR)\include\QtWebEngineCore</IncludePath>
