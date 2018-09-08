@@ -106,7 +106,7 @@ SignalFileItem::SignalFileItem()
 {
 }
 
-SignalFileItem::SignalFileItem(FileInfo info)
+SignalFileItem::SignalFileItem(const FileInfo & info)
 	: m_info(info)
 {
 	m_reader = m_info.createReader();
@@ -119,7 +119,7 @@ std::string SignalFileItem::name()
 	return m_info.fileName;
 }
 
-std::string SignalFileItem::name2(const std::string & key)
+std::string SignalFileItem::info(const std::string & key)
 {
 	if (boost::algorithm::iequals(key, "hint")) {
 		std::string ret;

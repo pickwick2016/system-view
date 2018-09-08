@@ -119,7 +119,7 @@ void MainWindow::onProject(unsigned int id, int action)
 				connect(subWindow, SIGNAL(destroyed(QObject *)), this, SLOT(subWindowDestroyed(QObject*)));
 
 				subWindow->setAttribute(Qt::WA_DeleteOnClose);
-				subWindow->setWindowTitle(QString::fromStdString(pitem->name2("simple")));
+				subWindow->setWindowTitle(QString::fromStdString(pitem->info("simple")));
 				subWindow->show();
 			}
 		}

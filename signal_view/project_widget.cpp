@@ -32,7 +32,7 @@ void ProjectWidget::onProject(unsigned int id, int action)
 
 		m_itemIds[litem] = pitem->id();
 
-		QString hint = QString::fromStdString(pitem->name2("hint"));
+		QString hint = QString::fromStdString(pitem->info("hint"));
 		if (!hint.isEmpty()) {
 			litem->setToolTip(hint);
 		}
