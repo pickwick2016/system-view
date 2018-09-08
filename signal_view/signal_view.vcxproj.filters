@@ -101,6 +101,9 @@
     <QtMoc Include="wave_widget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="project.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="main_window.ui">
@@ -119,9 +122,6 @@
     </QtRcc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="project.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="application.h">
       <Filter>Header Files</Filter>
     </ClInclude>

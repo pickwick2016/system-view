@@ -42,10 +42,10 @@ public slots:
 	void toggleWaveView();
 	void toggleWaterfallView();
 
-public:
+public slots:
 	// 处理 Project 项目消息.
-	void onProject(unsigned int id, int action);
-
+	void projectChanged(unsigned int id, int action);
+	
 protected:
 	void dragEnterEvent(QDragEnterEvent *evt);
 	void dropEvent(QDropEvent *evt);

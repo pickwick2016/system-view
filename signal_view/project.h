@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <boost/signals2.hpp>
+
+#include <QObject>
 
 #include "file_info.h"
 #include "misc.h"
@@ -17,8 +18,10 @@ class Reader;
  * 1、管理项目
  * 2、通知内外部消息.
  */
-class Project
+class Project : public QObject
 {
+	Q_OBJECT
+
 public:
 	// 项目相关动作.
 	enum Action
@@ -32,6 +35,9 @@ public:
 
 public:
 	Project();
+
+signals:
+	void projectChanged(unsigned int itemId, int action);
 
 public:
 	// 增加条目.
@@ -58,8 +64,8 @@ public:
 private:
 	void notify(unsigned int itemId, int action);
 
-public:
-	boost::signals2::signal<void(unsigned int /*itemId*/, int/*action*/)> m_signal;
+//public:
+//	boost::signals2::signal<void(unsigned int /*itemId*/, int/*action*/)> m_signal;
 
 private:
 	std::vector<std::shared_ptr<ProjectItem>> m_items;

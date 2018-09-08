@@ -19,7 +19,7 @@ ProjectWidget::~ProjectWidget()
 
 }
 
-void ProjectWidget::onProject(unsigned int id, int action)
+void ProjectWidget::projectChanged(unsigned int id, int action)
 {
 	auto pitem = Application::instance()->project()->find(id);
 	if (pitem == nullptr) 

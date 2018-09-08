@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	// 创建和设置项目.
 	m_project = Application::instance()->project();
-	m_project->m_signal.connect(boost::bind(&MainWindow::onProject, this, _1, _2));
+	connect(m_project, SIGNAL(projectChanged(unsigned int, int)), this, SLOT(projectChanged(unsigned int, int)));
 
 	// 设置主窗口状态.
 	setAcceptDrops(true);
@@ -57,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
 	addDockWidget(Qt::LeftDockWidgetArea, projectPane);
 	connect(ui.actionProjectPane, SIGNAL(triggered(bool)), projectPane, SLOT(setVisible(bool)));
 	connect(projectPane, SIGNAL(visibilityChanged(bool)), ui.actionProjectPane, SLOT(setChecked(bool)));
-	Application::instance()->project()->m_signal.connect(boost::bind(&ProjectWidget::onProject, projectPane, _1, _2));
+	connect(m_project, SIGNAL(projectChanged(unsigned int, int)), projectPane, SLOT(projectChanged(unsigned int, int)));
 
 	// 测试部分代码.
 #ifdef _DEBUG
@@ -68,8 +68,6 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
 	assert(m_project);
-
-	m_project->m_signal.disconnect_all_slots();
 }
 
 void MainWindow::openFile(QString filename)
@@ -94,7 +92,7 @@ void MainWindow::closeFile()
 	m_project->remove(selectItem);
 }
 
-void MainWindow::onProject(unsigned int itemId, int action)
+void MainWindow::projectChanged(unsigned int itemId, int action)
 {
 	auto pitem = Application::instance()->project()->find(itemId);
 	if (pitem == nullptr) {

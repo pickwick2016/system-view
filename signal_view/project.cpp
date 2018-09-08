@@ -99,7 +99,9 @@ void Project::select(unsigned int id)
 
 void Project::notify(unsigned int id, int action)
 {
-	m_signal(id, action);
+	//m_signal(id, action);
+
+	emit projectChanged(id, action);
 }
 
 SignalFileItem::SignalFileItem()
