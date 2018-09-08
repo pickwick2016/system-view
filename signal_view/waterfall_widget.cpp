@@ -578,30 +578,23 @@ void WaterfallWidget::initShortcuts()
 	m_shortcuts.clear();
 
 	// 1.³õÊ¼»¯¿ì½Ý¼ü.
-	//m_shortcuts[Reset] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[ResetTime] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[ResetFreq] = { Qt::Key_Left, false, false, false };
+	m_shortcuts[{Reset, 0}] = { Qt::Key_Q, false, false, false };
+	m_shortcuts[{ResetTime, 0}] = { Qt::Key_Q, false, true, false };
+	m_shortcuts[{ResetFreq, 0}] = { Qt::Key_Q, true, false, false };
 
 	m_shortcuts[{TimeBackward, 0.05}] = { Qt::Key_Left, false, false, false };
 	m_shortcuts[{TimeForward, 0.051}] = { Qt::Key_Right, false, false, false };
 	m_shortcuts[{TimeZoomIn, 0.1}] = { Qt::Key_Left, true, false, false };
 	m_shortcuts[{TimeZoomOut, 0.1}] = { Qt::Key_Right, true, false, false };
-	//m_shortcuts[TimeZoomInAt] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[TimeZoomOutAt] = { Qt::Key_Left, false, false, false };
+
 
 	m_shortcuts[{FreqBackward, 0.05}] = { Qt::Key_Down, false, false, false };
 	m_shortcuts[{FreqForward, 0.05}] = { Qt::Key_Up, false, false, false };
 	m_shortcuts[{FreqZoomIn, 0.1}] = { Qt::Key_Down, true, false, false };
 	m_shortcuts[{FreqZoomOut, 0.1}] = { Qt::Key_Up, true, false, false };
-	//m_shortcuts[FreqZoomInAt] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[FreqZoomOutAt] = { Qt::Key_Left, false, false, false };
+
 	
 	m_shortcuts[{ReloadSelect, 0.05}] = { Qt::Key_R, false, false, false };
-
-	//m_shortcuts[ColorRangeUp] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[ColorRangeDown] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[ColorRangeAdd] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[ColorRangeDec] = { Qt::Key_Left, false, false, false };
 
 	m_shortcuts[{ColorRangeAuto, 0.2}] = { Qt::Key_C, false, false, false };
 

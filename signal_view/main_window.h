@@ -10,6 +10,7 @@
 #include "ui_main_window.h"
 
 class ProjectItem;
+class SignalFileItem;
 class Project;
 
 // Ö÷´°¿Ú.
@@ -52,6 +53,7 @@ protected:
 
 private:
 	QWidget * makeSubWidget(ProjectItem * item);
+	QWidget * makeSubWidgetForSignalFile(SignalFileItem * fitem);
 	
 private:
 	Ui::MainWindowClass ui;

@@ -3,6 +3,81 @@
 #include "reader.h"
 #include "misc.h"
 
+int channelCount(DataType datatype)
+{
+	switch (datatype) {
+	case Int8:
+	case Int16:
+	case Int32:
+	case Real32:
+	case Real64:
+		return 1;
+
+	case Int8_2:
+	case Int16_2:
+	case Int32_2:
+	case Real32_2:
+	case Real64_2:
+		return 2;
+	
+	default:
+		return 0;
+	}
+}
+
+int convertToReal64(void * input, double * output, unsigned int count, int type)
+{
+	int count2 = count * channelCount((DataType) type);
+
+	switch (type) {
+	case DataType::Int8:
+	case DataType::Int8_2:
+		std::copy((char *)input, (char *)input + count2, output);
+		break;
+
+	case DataType::Int16:
+	case DataType::Int16_2:
+		std::copy((short *)input, (short *)input + count2, output);
+		break;
+
+	case DataType::Int32:
+	case DataType::Int32_2:
+		std::copy((int *)input, (int *)input + count2, output);
+		break;
+
+	case DataType::Real32:
+	case DataType::Real32_2:
+		std::copy((float *)input, (float *)input + count2, output);
+		break;
+
+	case DataType::Real64:
+	case DataType::Real64_2:
+		std::copy((double *)input, (double *)input + count2, output);
+		break;
+
+	default:
+		return -1;
+	}
+
+	return count2;
+}
+
+int readAsReal64(Reader * reader, double * data, unsigned int count, unsigned int pos)
+{
+	if (!reader || !data) {
+		return -1;
+	}
+	
+	std::vector<char> buffer(sizeof(double) * count * 2);
+	int readCount = reader->read(buffer.data(), count, pos);
+	if (readCount <= 0) {
+		return 0;
+	}
+
+	int ret = convertToReal64(buffer.data(), data, readCount, reader->type());
+	return ret;
+}
+
 FileReader::FileReader()
 {
 	m_filename = "";
@@ -76,8 +151,8 @@ unsigned int FileReader::read(void * data, unsigned int count, unsigned int pos)
 
 	m_file.read((char *) data, readCount * itemSize);
 
-	unsigned int getCount = tool::round_down(m_file.gcount(), itemSize);
-	return getCount;
+	int getCount = tool::round_down((int)m_file.gcount(), (int) itemSize);
+	return getCount / itemSize;
 }
 
 double FileReader::sampleRate() 

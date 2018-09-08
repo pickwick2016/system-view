@@ -72,6 +72,12 @@
     <ClCompile Include="file_info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="signal_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wave_widget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="main_window.h">
@@ -87,6 +93,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="freq_widget.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="wave_widget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -129,6 +138,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="file_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="signal_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

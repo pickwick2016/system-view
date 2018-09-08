@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QSplitter>
 #include <QTextEdit>
+#include <complex>
 
 #include "main_window.h"
 #include "open_dialog.h"
@@ -20,6 +21,8 @@
 #include "reader.h"
 #include "python_script.h"
 #include "freq_widget.h"
+#include "wave_widget.h"
+#include "misc.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -142,32 +145,38 @@ QWidget * MainWindow::makeSubWidget(ProjectItem * item)
 
 	SignalFileItem * fileitem = dynamic_cast<SignalFileItem *>(item);
 	if (fileitem) {
-		QSplitter * splitter = new QSplitter(Qt::Vertical, this);
-				
-		WaterfallWidget * widget = new WaterfallWidget();
-		connect(widget, SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
-		auto desc = fileitem->fileInfo();
-		widget->load(fileitem->reader());
-		//widget->load(QString::fromStdString(desc.fileName), desc.dataType, desc.sampleRate);
-
-		splitter->insertWidget(0, widget);
-		splitter->setStretchFactor(0, 1);
-
-		FreqWidget * widget2 = new FreqWidget();
-		widget2->load(fileitem->reader());
-		splitter->insertWidget(1, widget2);
-		splitter->setStretchFactor(1, 1);
-
-		widget->setFocusPolicy(Qt::StrongFocus);
-		connect(widget, SIGNAL(visibleChanged(QRectF)), widget2, SLOT(visibleChanged(QRectF)));
-
-		//QTextEdit * widget3 = new QTextEdit();
-		//splitter->insertWidget(2, widget3);
-
-		return splitter;
+		return makeSubWidgetForSignalFile(fileitem);
 	}
 
 	return nullptr;
+}
+
+
+QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
+{
+	assert(fitem != nullptr);
+
+	QSplitter * splitter = new QSplitter(Qt::Vertical, this);
+
+	WaterfallWidget * widget = new WaterfallWidget();
+	connect(widget, SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
+	widget->load(fitem->reader());
+
+	splitter->insertWidget(0, widget);
+	splitter->setStretchFactor(0, 2);
+
+	//FreqWidget * widget2 = new FreqWidget();
+	WaveWidget * widget2 = new WaveWidget();
+	widget2->load(fitem->reader());
+	splitter->insertWidget(1, widget2);
+	splitter->setStretchFactor(1, 1);
+
+	widget->setFocusPolicy(Qt::StrongFocus);
+	connect(widget, SIGNAL(visibleChanged(QRectF)), widget2, SLOT(visibleChanged(QRectF)));
+
+	splitter->setSizes(QList<int>() << 2 << 1);
+
+	return splitter;
 }
 
 void MainWindow::subWindowDestroyed(QObject * obj)

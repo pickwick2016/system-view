@@ -4,6 +4,56 @@
 
 namespace tool {
 
+	int convert(void * input, double * output, int count, int datatype)
+	{
+		switch (datatype) {
+		case DataType::Int8:
+			std::copy((char *)input, (char *)input + count, output);
+			break;
+
+		case DataType::Int16:
+			std::copy((short *)input, (short *)input + count, output);
+			break;
+
+		case DataType::Int32:
+			std::copy((int *)input, (int *)input + count, output);
+			break;
+
+		case DataType::Real32:
+			std::copy((float *)input, (float *)input + count * 2, output);
+			break;
+
+		case DataType::Real64:
+			std::copy((double *)input, (double *)input + count * 2, output);
+			break;
+
+		case DataType::Int8_2:
+			std::copy((char *)input, (char *)input + count * 2, output);
+			break;
+
+		case DataType::Int16_2:
+			std::copy((short *)input, (short *)input + count * 2, output);
+			break;
+
+		case DataType::Int32_2:
+			std::copy((int *)input, (int *)input + count * 2, output);
+			break;
+
+		case DataType::Real32_2:
+			std::copy((float *)input, (float *)input + count * 2, output);
+			break;
+
+		case DataType::Real64_2:
+			std::copy((double *)input, (double *)input + count * 2, output);
+			break;
+
+		default:
+			return 0;
+		}
+
+		return count;
+	}
+
 	std::tuple<int, int, int> colormap_rainbow(float v, float vmin, float vmax)
 	{
 		float red = 1, blue = 1, green = 1;

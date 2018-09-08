@@ -12,6 +12,8 @@
 #include <QtCharts/QChart>
 #include <QtCharts/QValueAxis>
 
+#include <boost/variant.hpp>
+
 QT_CHARTS_USE_NAMESPACE
 
 #include "freq_widget.h"
@@ -21,7 +23,6 @@ QT_CHARTS_USE_NAMESPACE
 FreqWidget::FreqWidget(QWidget *parent) : QWidget(parent)
 {
 	m_currentTime = -1;
-	m_fft.reset(new Fft());
 
 	QChartView *chartView = new QChartView(this);
 	chartView->setRubberBand(QChartView::VerticalRubberBand);
@@ -37,11 +38,11 @@ FreqWidget::FreqWidget(QWidget *parent) : QWidget(parent)
 	m_chart->addSeries(m_line);
 
 	QValueAxis *axisX = new QValueAxis;
-	axisX->setRange(0, 100);
+	axisX->setRange(0, 1);
 	axisX->setLabelsColor(QColor(255, 255, 255));
 
 	QValueAxis *axisY = new QValueAxis;
-	axisY->setRange(-40, 50);
+	axisY->setRange(0, 1);
 	axisY->setLabelsColor(QColor(255, 255, 255));
 
 	m_chart->setAxisX(axisX, m_line);
@@ -63,62 +64,54 @@ FreqWidget::~FreqWidget()
 
 void FreqWidget::load(std::shared_ptr<Reader> reader)
 {
-	m_reader = reader;
+	m_loader.load(reader);
 
-	double fs = m_reader ? m_reader->sampleRate() : 1;
-	m_chart->axisX()->setRange(0, m_reader->maxFreq());
-
-	std::vector<float> values;
-	reload(0, values);
-	if (!values.empty()) {
-		auto mm = std::minmax_element(values.begin(), values.end());
-		float m1 = *(mm.first), m2 = *(mm.second);
-		float dev = (m2 - m1) * 0.1;
-		m_chart->axisY()->setRange(m1 - dev, m2 + dev);
-
-		drawValues(values);
+	if (reload(0)) {
+		drawAxis();
 	}
 }
 
-void FreqWidget::reload(double t, std::vector<float> & values)
+bool FreqWidget::reload(double t)
 {
-	int fftlen = m_fft->length();
-	double fs = m_reader->sampleRate();
-	int readPos = std::floor(t * fs);
-
-	std::vector<char> buffer(fftlen * sizeof(double) * 2);
-	values.clear();
-		
-	if (readPos >= 0 && readPos < m_reader->count()) {
-		values.resize(fftlen);
-		
-		m_reader->read(buffer.data(), m_fft->length(), readPos);
-		int count2 = m_fft->power(buffer.data(), values.data(), fftlen, m_reader->type());
-		values.resize(count2);
+	if (m_currentTime == t) {
+		return true;
 	}
+
+	if (m_loader.prepare(t)) {
+		drawValues();
+		m_currentTime = t;
+		return true;
+	}
+
+	return false;
 }
 
-void FreqWidget::drawValues(const std::vector<float> & values)
+void FreqWidget::drawValues()
 {
-	int fftlen = m_fft->length();
-	double fs = m_reader->sampleRate();
-	double freqStep = fs / fftlen;
+	auto values = m_loader.values();
+	float * data = values.first;
+	int count = values.second;
+
+	double freqStep = m_loader.freqStep();
 
 	QList<QPointF> points;
-	for (int i = 0; i < values.size(); i++) {
-		points.append(QPointF(i * freqStep, values[i]));
+	for (int i = 0; i < count; i++) {
+		points.append(QPointF(i * freqStep, data[i]));
 	}
 
 	m_line->replace(points);
 }
 
+void FreqWidget::drawAxis()
+{
+	auto rangeX = m_loader.freqRange();
+	m_chart->axisX()->setRange(rangeX.first, rangeX.second);
+
+	auto rangeY = m_loader.valueRange();
+	m_chart->axisY()->setRange(rangeY.first, rangeY.second);
+}
+
 void FreqWidget::visibleChanged(QRectF r)
 {
-	if (m_currentTime != r.left()) {
-		m_currentTime = r.left();
-
-		std::vector<float> values;
-		reload(m_currentTime, values);
-		drawValues(values);
-	}
+	reload(r.left());
 }

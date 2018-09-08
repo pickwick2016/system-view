@@ -9,7 +9,24 @@
 
 #include <QRect>
 
+
 namespace tool {
+
+	template <class FwdIt, class T = FwdIt::value_type>
+	std::pair<T, T> minmax(FwdIt first, FwdIt last)
+	{
+		auto mm = std::minmax_element(first, last);
+		return { *(mm.first), *(mm.second) };
+	}
+
+	template <class T>
+	std::pair<T, T> minmax(T * first, T * last)
+	{
+		auto mm = std::minmax_element(first, last);
+		return { *(mm.first), *(mm.second) };
+	}
+
+	int convert(void * input, double * output, int count, int datatype);
 
 	// ¼ôÇÐ¾ØÐÎ.
 	QRectF clip(QRectF r, QRectF all);
@@ -77,7 +94,7 @@ namespace tool {
 		return { val.first + dv, val.second + dv };
 	}
 	
-	inline unsigned int round_down(unsigned int count, unsigned int seg)
+	inline int round_down(int count, int seg)
 	{
 		return (count / seg) * seg;
 	}

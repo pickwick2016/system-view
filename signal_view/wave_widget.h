@@ -1,5 +1,5 @@
-#ifndef FREQ_WIDGET_H
-#define FREQ_WIDGET_H
+#ifndef WAVE_WIDGET_H
+#define WAVE_WIDGET_H
 
 #include <memory>
 
@@ -15,13 +15,13 @@ QT_CHARTS_END_NAMESPACE
 
 
 // 频谱控件.
-class FreqWidget : public QWidget
+class WaveWidget : public QWidget
 {
 	Q_OBJECT
 
 public:
-	FreqWidget(QWidget *parent = nullptr);
-	~FreqWidget();
+	WaveWidget(QWidget *parent = nullptr);
+	~WaveWidget();
 
 public slots:
 	void visibleChanged(QRectF);
@@ -32,21 +32,24 @@ public:
 
 private:
 	// 重新载入指定时刻的内容.
-	bool reload(double t);
+	bool reload(double t1, double t2);
 
 	// 绘制数值.
 	void drawValues();
+
+	void drawChannel(int idx);
 
 	// 重绘坐标轴.
 	void drawAxis();
 
 private:
 	QtCharts::QChart * m_chart;
-	QtCharts::QLineSeries * m_line;
 
-	FreqLoader m_loader;
+	std::vector<QtCharts::QLineSeries *> m_lines;
+	
+	WaveLoader m_loader;
 
-	double m_currentTime;
+	std::pair<double, double> m_currentTime;
 };
 
-#endif //FREQ_WIDGET_H
+#endif //WAVE_WIDGET_H

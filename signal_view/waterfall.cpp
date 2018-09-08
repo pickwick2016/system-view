@@ -130,7 +130,7 @@ bool Waterfall::query(QRectF visible, std::pair<int, int> sizeHint)
 
 	int timeHint = sizeHint.first;
 	if (timeHint > 0) {
-		int temp = tool::round_down((pos2 - pos1) / timeHint, m_stepAlign);
+		int temp = tool::round_down((pos2 - pos1) / timeHint, (int) m_stepAlign);
 		int step = std::max<int>(temp, m_stepAlign);
 		m_currentStep = step;
 	}
@@ -295,7 +295,7 @@ QRectF Waterfall::currentArea()
 		double ts = 1 / fs;
 
 		double timeStart = m_currentRange.first * ts;
-		double timeEnd = (tool::round_down(m_currentRange.second, m_currentStep)
+		double timeEnd = (tool::round_down(m_currentRange.second, (int) m_currentStep)
 			+ std::max<int>(m_currentFft, m_currentStep)) * ts; // TODO :CHECK
 
 		double freqEnd = (m_reader->channel() == 2) ? fs : fs / 2;

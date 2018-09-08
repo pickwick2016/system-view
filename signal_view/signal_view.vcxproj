@@ -125,8 +125,10 @@
     <ClCompile Include="project_widget.cpp" />
     <ClCompile Include="python_script.cpp" />
     <ClCompile Include="reader.cpp" />
+    <ClCompile Include="signal_loader.cpp" />
     <ClCompile Include="waterfall.cpp" />
     <ClCompile Include="waterfall_widget.cpp" />
+    <ClCompile Include="wave_widget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="main_window.h" />
@@ -141,6 +143,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fft.h" />
+    <QtMoc Include="wave_widget.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(FFTW_DIR)\.;$(PYTHON_DIR)\.;$(BOOST_DIR)\.;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtWebEngine;$(QTDIR)\include\QtWebEngineCore</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_DLL;QT_CORE_LIB;QT_GUI_LIB;QT_WIDGETS_LIB;QT_WEBENGINE_LIB;QT_WEBENGINECORE_LIB</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(PYTHON_DIR)\.;$(FFTW_DIR)\.;$(BOOST_DIR)\.;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets;$(QTDIR)\include\QtWebEngine;$(QTDIR)\include\QtWebEngineCore</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_DLL;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;QT_GUI_LIB;QT_WIDGETS_LIB;QT_WEBENGINE_LIB;QT_WEBENGINECORE_LIB</Define>
+    </QtMoc>
     <QtMoc Include="freq_widget.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(FFTW_DIR)\.;$(PYTHON_DIR)\.;$(BOOST_DIR)\.;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>
       <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_DLL;QT_CORE_LIB;QT_GUI_LIB;QT_WIDGETS_LIB</Define>
@@ -150,6 +158,7 @@
     <ClInclude Include="file_info.h" />
     <ClInclude Include="python_script.h" />
     <ClInclude Include="reader.h" />
+    <ClInclude Include="signal_loader.h" />
     <ClInclude Include="waterfall.h" />
     <QtMoc Include="waterfall_widget.h">
       <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(BOOST_DIR)\.;.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtANGLE;$(QTDIR)\include\QtWidgets</IncludePath>

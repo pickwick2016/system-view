@@ -19,6 +19,8 @@ enum DataType
 	Real64_2,
 };
 
+int channelCount(DataType datatype);
+
 // 读取设备.
 class Reader
 {
@@ -33,6 +35,7 @@ public:
 	virtual int itemSize() { return sizeof(float); }
 	virtual int channel() { return 1; }
 	virtual double maxFreq() { return (channel() == 2) ? sampleRate() : sampleRate() / 2; }
+	virtual double maxTime() { return count() / sampleRate(); }
 };
 
 // 文件数据源.
@@ -64,3 +67,14 @@ private:
 	
 	unsigned int m_fileSize;
 };
+
+
+/**
+ * 从数据器中读取数据，并转换为real64数据类型.
+ * @param reader 读取器
+ * @param data 输出缓冲区，用户需要保证缓冲区可用（通常数量等于 count * 2）
+ * @param count 读取的数据数量
+ * @param pos 读取位置
+ * @return 转换形成的real64数据数量，如果双通道数据，应等于 count * 2
+ */
+int readAsReal64(Reader * reader, double * data, unsigned int count, unsigned int pos);
