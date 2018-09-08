@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <complex>
 #include <boost/bind.hpp>
 
 #include <QMdiSubWindow>
@@ -10,7 +11,7 @@
 #include <QLabel>
 #include <QSplitter>
 #include <QTextEdit>
-#include <complex>
+#include <QStackedWidget>
 
 #include "main_window.h"
 #include "open_dialog.h"
@@ -29,40 +30,36 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	ui.setupUi(this);
 
-	setAcceptDrops(true);
+	// 创建和设置项目.
+	m_project = Application::instance()->project();
+	m_project->m_signal.connect(boost::bind(&MainWindow::onProject, this, _1, _2));
 
+	// 设置主窗口状态.
+	setAcceptDrops(true);
+	setDockNestingEnabled(true);
+
+	// 设置状态栏.
 	m_statusLabel = new QLabel();
 	m_statusLabel->setMinimumWidth(180);
 	m_statusLabel->setAlignment(Qt::AlignRight);
 	ui.statusBar->addPermanentWidget(m_statusLabel);
-
-	//setDockNestingEnabled(true);
-	//setDockOptions(QMainWindow::ForceTabbedDocks);
-
-	m_project = Application::instance()->project();
-
+	
 	// 连接用户消息-槽.
 	connect(ui.actionOpen, SIGNAL(triggered()), this, SLOT(openFile()));
 	connect(ui.actionClose, SIGNAL(triggered()), this, SLOT(closeFile()));
-
 	connect(ui.actionFreq, SIGNAL(triggered()), this, SLOT(toggleFreqView()));
 	connect(ui.actionWave, SIGNAL(triggered()), this, SLOT(toggleWaveView()));
 	connect(ui.actionWaterfall, SIGNAL(triggered()), this, SLOT(toggleWaterfallView()));
-	
 	connect(ui.actionScript1, SIGNAL(triggered()), this, SLOT(doScript1()));
-
-	m_project->m_signal.connect(boost::bind(&MainWindow::onProject, this, _1, _2));
-
-	//// 添加“项目”窗口
+	
+	// 添加和设置“项目”窗口
 	auto projectPane = new ProjectWidget(this);
 	addDockWidget(Qt::LeftDockWidgetArea, projectPane);
-	//
 	connect(ui.actionProjectPane, SIGNAL(triggered(bool)), projectPane, SLOT(setVisible(bool)));
 	connect(projectPane, SIGNAL(visibilityChanged(bool)), ui.actionProjectPane, SLOT(setChecked(bool)));
-
 	Application::instance()->project()->m_signal.connect(boost::bind(&ProjectWidget::onProject, projectPane, _1, _2));
 
-
+	// 测试部分代码.
 #ifdef _DEBUG
 	m_project->add("c:/data/bingle.dat", DataType::Real32, 1);
 #endif //_DEBUG
@@ -75,11 +72,6 @@ MainWindow::~MainWindow()
 	m_project->m_signal.disconnect_all_slots();
 }
 
-void MainWindow::showEvent(QShowEvent * evt)
-{
-
-}
-
 void MainWindow::openFile(QString filename)
 {
 	assert(m_project);
@@ -87,39 +79,40 @@ void MainWindow::openFile(QString filename)
 	OpenDialog dialog;
 	dialog.initContent(filename);
 	if (dialog.exec()) {
-		// 添加文件.
-		auto desc = dialog.fileInfo();
-		if (desc.isValid()) {
-			m_project->add(new SignalFileItem(desc));
+		auto fileInfo = dialog.fileInfo();
+		if (fileInfo.isValid()) {
+			m_project->add(new SignalFileItem(fileInfo));
 		}
 	}
 }
 
 void MainWindow::closeFile()
 {
-	unsigned int sel = m_project->selection();
-	m_project->remove(sel);
+	assert(m_project);
+
+	unsigned int selectItem = m_project->selection();
+	m_project->remove(selectItem);
 }
 
-void MainWindow::onProject(unsigned int id, int action)
+void MainWindow::onProject(unsigned int itemId, int action)
 {
-	auto pitem = Application::instance()->project()->find(id);
-	if (pitem == nullptr)
+	auto pitem = Application::instance()->project()->find(itemId);
+	if (pitem == nullptr) {
 		return;
-
+	}
+	
 	if (action == Project::ShowItem) {
 		if (m_wndOfIds.find(pitem->id()) == m_wndOfIds.end()) {
 			auto widget = makeSubWidget(pitem);
 			if (widget) {
 				auto subWindow = ui.mdiArea->addSubWindow(widget);
-				widget->setFocusPolicy(Qt::StrongFocus);
-
 				m_wndOfIds[pitem->id()] = subWindow;
-
-				connect(subWindow, SIGNAL(destroyed(QObject *)), this, SLOT(subWindowDestroyed(QObject*)));
-
+				
+				widget->setFocusPolicy(Qt::StrongFocus);
 				subWindow->setAttribute(Qt::WA_DeleteOnClose);
 				subWindow->setWindowTitle(QString::fromStdString(pitem->info("simple")));
+
+				connect(subWindow, SIGNAL(destroyed(QObject *)), this, SLOT(subWindowDestroyed(QObject*)));
 				subWindow->show();
 			}
 		}
@@ -133,7 +126,6 @@ void MainWindow::onProject(unsigned int id, int action)
 		if (m_wndOfIds.find(pitem->id()) != m_wndOfIds.end()) {
 			QMdiSubWindow * sub = m_wndOfIds[pitem->id()];
 			ui.mdiArea->removeSubWindow(sub);
-
 			m_wndOfIds.erase(pitem->id());
 		}
 	}
@@ -144,7 +136,7 @@ QWidget * MainWindow::makeSubWidget(ProjectItem * item)
 	assert(item);
 
 	SignalFileItem * fileitem = dynamic_cast<SignalFileItem *>(item);
-	if (fileitem) {
+	if (fileitem != nullptr) {
 		return makeSubWidgetForSignalFile(fileitem);
 	}
 
@@ -156,27 +148,40 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 {
 	assert(fitem != nullptr);
 
-	QSplitter * splitter = new QSplitter(Qt::Vertical, this);
+	// 整体分割结构.
+	// 上半部，层叠结构 a) waterfall  b） wave
+	// 下半部 freq
 
-	WaterfallWidget * widget = new WaterfallWidget();
-	connect(widget, SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
-	widget->load(fitem->reader());
+	QSplitter * splitterWnd = new QSplitter(Qt::Vertical, this);
 
-	splitter->insertWidget(0, widget);
-	splitter->setStretchFactor(0, 2);
+	// 创建子窗口.
+	QStackedWidget * stackWnd = new QStackedWidget();
 
-	//FreqWidget * widget2 = new FreqWidget();
-	WaveWidget * widget2 = new WaveWidget();
-	widget2->load(fitem->reader());
-	splitter->insertWidget(1, widget2);
-	splitter->setStretchFactor(1, 1);
+	WaterfallWidget * waterfallWnd = new WaterfallWidget();
+	waterfallWnd->setFocusPolicy(Qt::StrongFocus);
+	waterfallWnd->load(fitem->reader());
+	connect(waterfallWnd, SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
+	stackWnd->addWidget(waterfallWnd);
 
-	widget->setFocusPolicy(Qt::StrongFocus);
-	connect(widget, SIGNAL(visibleChanged(QRectF)), widget2, SLOT(visibleChanged(QRectF)));
+	WaveWidget * waveWnd = new WaveWidget();
+	waveWnd->load(fitem->reader());
+	stackWnd->addWidget(waveWnd);
 
-	splitter->setSizes(QList<int>() << 2 << 1);
+	FreqWidget * freqWnd = new FreqWidget();
+	freqWnd->load(fitem->reader());
 
-	return splitter;
+	// 配置分割窗口.
+	splitterWnd->insertWidget(0, stackWnd);
+	splitterWnd->setStretchFactor(0, 2);
+
+	splitterWnd->insertWidget(1, freqWnd);
+	splitterWnd->setStretchFactor(1, 1);
+
+	splitterWnd->setSizes(QList<int>() << 2 << 1);
+
+	connect(waterfallWnd, SIGNAL(visibleChanged(QRectF)), freqWnd, SLOT(visibleChanged(QRectF)));
+
+	return splitterWnd;
 }
 
 void MainWindow::subWindowDestroyed(QObject * obj)
@@ -231,15 +236,40 @@ void MainWindow::doScript1()
 
 void MainWindow::toggleFreqView()
 {
-
+	auto subWnd = ui.mdiArea->activeSubWindow();
+	if (subWnd) {
+		QSplitter * splitter = dynamic_cast<QSplitter *>(subWnd->widget());
+		if (splitter && splitter->widget(1)) {
+			bool vis = splitter->widget(1)->isVisible();
+			splitter->widget(1)->setVisible(! vis);
+		}
+	}
 }
 
 void MainWindow::toggleWaveView()
 {
-
+	auto subWnd = ui.mdiArea->activeSubWindow();
+	if (subWnd) {
+		QSplitter * splitter = dynamic_cast<QSplitter *>(subWnd->widget());
+		if (splitter && splitter->widget(0)) {
+			QStackedWidget * stackWnd = dynamic_cast<QStackedWidget *>(splitter->widget(0));
+			if (stackWnd) {
+				stackWnd->setCurrentIndex(1);
+			}
+		}
+	}
 }
 
 void MainWindow::toggleWaterfallView()
 {
-
+	auto subWnd = ui.mdiArea->activeSubWindow();
+	if (subWnd) {
+		QSplitter * splitter = dynamic_cast<QSplitter *>(subWnd->widget());
+		if (splitter && splitter->widget(0)) {
+			QStackedWidget * stackWnd = dynamic_cast<QStackedWidget *>(splitter->widget(0));
+			if (stackWnd) {
+				stackWnd->setCurrentIndex(0);
+			}
+		}
+	}
 }

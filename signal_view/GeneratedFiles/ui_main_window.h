@@ -87,10 +87,19 @@ public:
         actionScript1->setObjectName(QStringLiteral("actionScript1"));
         actionFreq = new QAction(MainWindowClass);
         actionFreq->setObjectName(QStringLiteral("actionFreq"));
+        QIcon icon6;
+        icon6.addFile(QStringLiteral(":/MainWindow/icon/freq.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionFreq->setIcon(icon6);
         actionWaterfall = new QAction(MainWindowClass);
         actionWaterfall->setObjectName(QStringLiteral("actionWaterfall"));
+        QIcon icon7;
+        icon7.addFile(QStringLiteral(":/MainWindow/icon/waterfall.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionWaterfall->setIcon(icon7);
         actionWave = new QAction(MainWindowClass);
         actionWave->setObjectName(QStringLiteral("actionWave"));
+        QIcon icon8;
+        icon8.addFile(QStringLiteral(":/MainWindow/icon/wave.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionWave->setIcon(icon8);
         centralWidget = new QWidget(MainWindowClass);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         verticalLayout_2 = new QVBoxLayout(centralWidget);
@@ -146,6 +155,10 @@ public:
         mainToolBar->addAction(actionOpen);
         mainToolBar->addAction(actionClose);
         mainToolBar->addAction(actionExit);
+        mainToolBar->addSeparator();
+        mainToolBar->addAction(actionWaterfall);
+        mainToolBar->addAction(actionWave);
+        mainToolBar->addAction(actionFreq);
 
         retranslateUi(MainWindowClass);
         QObject::connect(actionExit, SIGNAL(triggered()), MainWindowClass, SLOT(close()));

@@ -106,6 +106,10 @@
    <addaction name="actionOpen"/>
    <addaction name="actionClose"/>
    <addaction name="actionExit"/>
+   <addaction name="separator"/>
+   <addaction name="actionWaterfall"/>
+   <addaction name="actionWave"/>
+   <addaction name="actionFreq"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionOpen">
@@ -165,16 +169,28 @@
    </property>
   </action>
   <action name="actionFreq">
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/freq.png</normaloff>:/MainWindow/icon/freq.png</iconset>
+   </property>
    <property name="text">
     <string>瞬时频谱</string>
    </property>
   </action>
   <action name="actionWaterfall">
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/waterfall.png</normaloff>:/MainWindow/icon/waterfall.png</iconset>
+   </property>
    <property name="text">
     <string>瀑布图</string>
    </property>
   </action>
   <action name="actionWave">
+   <property name="icon">
+    <iconset resource="main_window.qrc">
+     <normaloff>:/MainWindow/icon/wave.png</normaloff>:/MainWindow/icon/wave.png</iconset>
+   </property>
    <property name="text">
     <string>波形图</string>
    </property>

@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="MainWindow">
+    <file>icon/freq.png</file>
+    <file>icon/waterfall.png</file>
+    <file>icon/wave.png</file>
     <file>icon/information_2.png</file>
     <file>icon/monitor.png</file>
     <file>icon/project.png</file>

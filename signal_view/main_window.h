@@ -47,12 +47,14 @@ public:
 	void onProject(unsigned int id, int action);
 
 protected:
-	void showEvent(QShowEvent * evt);
 	void dragEnterEvent(QDragEnterEvent *evt);
 	void dropEvent(QDropEvent *evt);
 
 private:
+	// 创建Mdi子窗口.
 	QWidget * makeSubWidget(ProjectItem * item);
+	
+	// 创建Mdi子窗口（信号文件）
 	QWidget * makeSubWidgetForSignalFile(SignalFileItem * fitem);
 	
 private:
