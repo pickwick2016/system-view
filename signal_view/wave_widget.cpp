@@ -19,9 +19,11 @@ QT_CHARTS_USE_NAMESPACE
 #include "wave_widget.h"
 #include "fft.h"
 #include "reader.h"
+#include "misc.h"
 
 WaveWidget::WaveWidget(QWidget *parent) : QWidget(parent)
 {
+	m_needNotify = true;
 	m_currentTime = {-1, -1};
 
 	QChartView *chartView = new QChartView(this);
@@ -62,9 +64,19 @@ WaveWidget::~WaveWidget()
 {
 }
 
-void WaveWidget::syncView(QRectF)
+void WaveWidget::syncView(QRectF area)
 {
+	tool::ValueGuard<bool> notifyGuard(m_needNotify, false);
 
+	QRectF newArea = m_visibleArea;
+	if (area.width() > 0) {
+		newArea.setLeft(area.left());
+		newArea.setRight(area.right());
+	}
+
+	if (newArea != m_visibleArea) {
+		//setVisibleArea(newArea);
+	}
 }
 
 void WaveWidget::load(std::shared_ptr<Reader> reader)
@@ -146,9 +158,4 @@ void WaveWidget::drawAxis()
 	//m_chart->axisY()->setRange(rangeY.first, rangeY.second);
 }
 
-void WaveWidget::visibleChanged(QRectF r)
-{
-	if (reload(r.left(), r.right())) {
-		drawAxis();
-	}
-}
+

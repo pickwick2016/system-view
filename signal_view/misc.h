@@ -12,22 +12,25 @@
 
 namespace tool {
 
+	// ÊýÖµÊØ»¤.
 	template <class T>
-	struct ValueGuard
+	class ValueGuard
 	{
-		ValueGuard(T & obj, T value) : m_obj(obj)
+	public:
+		ValueGuard(T & obj, T newValue) : m_reference(obj)
 		{
-			m_value = obj;
-			obj = value;
+			m_oldValue = obj;
+			obj = newValue;
 		}
 
 		~ValueGuard()
 		{
-			m_obj = m_value;
+			m_reference = m_oldValue;
 		}
 
-		T & m_obj;
-		T m_value;
+	private:
+		T & m_reference;
+		T m_oldValue;
 	};
 
 	template <class FwdIt, class T = FwdIt::value_type>

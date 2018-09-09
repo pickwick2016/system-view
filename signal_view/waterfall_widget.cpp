@@ -12,7 +12,7 @@ WaterfallWidget::WaterfallWidget(QWidget *parent)
 {
 	m_needNotify = true;
 	m_mousePressed = false;
-	m_waterfall.reset(new Waterfall());
+	m_loader.reset(new WaterfallLoader());
 
 	setMouseTracking(true);
 	setMinimumSize(QSize(100, 75));
@@ -22,24 +22,44 @@ WaterfallWidget::WaterfallWidget(QWidget *parent)
 
 WaterfallWidget::~WaterfallWidget()
 {
-	assert(m_waterfall);
+	assert(m_loader);
 
-	m_waterfall.reset();
+	m_loader.reset();
 	m_shortcuts.clear();
 }
 
 void WaterfallWidget::syncView(QRectF area)
 {
 	tool::ValueGuard<bool> notifyGuard(m_needNotify, false);
+
+	QRectF newArea = m_visibleArea;
+	if (area.width() > 0) {
+		newArea.setLeft(area.left());
+		newArea.setRight(area.right());
+	}
+
+	if (area.height() > 0) {
+		newArea.setTop(area.top());
+		newArea.setBottom(area.bottom());
+	}
+
+	if (newArea != m_visibleArea) {
+		setVisibleArea(newArea);
+	}
+}
+
+void WaterfallWidget::reload(QRectF area)
+{
+
 }
 
 void WaterfallWidget::load(std::shared_ptr<Reader> reader)
 {
-	m_waterfall->load(reader);
+	m_loader->load(reader);
 
-	bool loaded = m_waterfall->isLoaded();
+	bool loaded = m_loader->isLoaded();
 	if (loaded) {
-		m_visibleArea = m_waterfall->totalArea();
+		m_visibleArea = m_loader->totalArea();
 	}
 	else {
 		m_visibleArea = QRectF();
@@ -48,13 +68,13 @@ void WaterfallWidget::load(std::shared_ptr<Reader> reader)
 
 bool WaterfallWidget::load(QString filename, int type, double samplerate)
 {
-	assert(m_waterfall);
+	assert(m_loader);
 
-	m_waterfall->load(filename.toStdString(), type, samplerate);
+	m_loader->load(filename.toStdString(), type, samplerate);
 	
-	bool loaded = m_waterfall->isLoaded();
+	bool loaded = m_loader->isLoaded();
 	if (loaded) {
-		m_visibleArea = m_waterfall->totalArea();
+		m_visibleArea = m_loader->totalArea();
 	}
 	else {
 		m_visibleArea = QRectF();
@@ -65,9 +85,9 @@ bool WaterfallWidget::load(QString filename, int type, double samplerate)
 
 void WaterfallWidget::close()
 {
-	assert(m_waterfall);
+	assert(m_loader);
 
-	m_waterfall->close();
+	m_loader->close();
 }
 
 void WaterfallWidget::paintEvent(QPaintEvent *event)
@@ -159,11 +179,11 @@ void WaterfallWidget::drawData(QPainter & painter)
 
 	QRectF visibleArea = m_visibleArea;
 
-	if (m_waterfall->prepare(visibleArea, { 200, 100 })) {
+	if (m_loader->prepare(visibleArea, { 200, 100 })) {
 		painter.setClipRect(bound);
 
-		QRectF pixmapArea = m_waterfall->currentArea();
-		QPixmap & pixmap = m_waterfall->pixmap();
+		QRectF pixmapArea = m_loader->pixmapArea();
+		QPixmap & pixmap = m_loader->pixmap();
 		QRect pixmapRect = pixmap.rect();
 
 		QRectF drawArea = tool::map(pixmapArea, visibleArea, tool::rectFlipY(bound));
@@ -247,7 +267,7 @@ void WaterfallWidget::showEvent(QShowEvent * evt)
 
 QRectF WaterfallWidget::totalArea()
 {
-	return m_waterfall->totalArea();
+	return m_loader->totalArea();
 }
 
 QRectF WaterfallWidget::visibleArea()
@@ -257,15 +277,18 @@ QRectF WaterfallWidget::visibleArea()
 
 void WaterfallWidget::setVisibleArea(QRectF r, bool redraw)
 {
-	QRectF oldArea = m_visibleArea;
-	m_visibleArea = r.normalized();
+	QRectF newArea = tool::clip(r.normalized(), totalArea());
+	
+	if (newArea != m_visibleArea) {
+		m_visibleArea = newArea;
 
-	if (oldArea != m_visibleArea) {
 		if (redraw) {
 			update(); //repaint();
 		}
 
-		emit viewChanged(m_visibleArea);
+		if (m_needNotify) {
+			emit viewChanged(m_visibleArea);
+		}
 	}
 }
 
@@ -353,10 +376,10 @@ bool WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 	case ColorRangeDown:
 	case ColorRangeUp:
 	{
-		auto rng = m_waterfall->colorRange();
+		auto rng = m_loader->colorRange();
 		float diff = (type == ColorRangeUp) ? 5 : -5;
 		rng = tool::range_move<float>(rng, diff);
-		m_waterfall->setColorRange(rng);
+		m_loader->setColorRange(rng);
 		dirty = true;
 		break;
 	}
@@ -364,29 +387,29 @@ bool WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 	case ColorRangeAdd:
 	case ColorRangeDec:
 	{
-		auto rng = m_waterfall->colorRange();
+		auto rng = m_loader->colorRange();
 		float width = tool::range_length(rng);
 		float diff = (type == ColorRangeAdd) ? width * 0.05 : width * -0.05;
 
 		rng = tool::range_expand<float>(rng, diff);
-		m_waterfall->setColorRange(rng);
+		m_loader->setColorRange(rng);
 		dirty = true;
 		break;
 	}
 
 	case ColorRangeAuto:
 	{
-		std::pair<float, float> rng = m_waterfall->currentValueRange();
+		std::pair<float, float> rng = m_loader->currentValueRange();
 		if (rng != std::pair<float, float>(0, 0)) {
 			float val = tool::range_length(rng) * param;
-			m_waterfall->setColorRange({ rng.first - val, rng.second + val });
+			m_loader->setColorRange({ rng.first - val, rng.second + val });
 			dirty = true;
 		}
 		break;
 	}
 
 	case ToggleAutoFft:
-		m_waterfall->setAutoFft(!m_waterfall->isAutoFft());
+		m_loader->setAutoFft(!m_loader->isAutoFft());
 		dirty = true;
 		break;
 
@@ -552,32 +575,6 @@ QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
 	return ret;
 }
 
-bool WaterfallWidget::setParam(const QString & name, QVariant value)
-{
-	bool result;
-
-	if (name.compare("fft", Qt::CaseInsensitive)) {
-		double fft = value.toDouble(&result);
-		if (result) {
-			int fftlen = std::roundf(tool::round_pow2(fft));
-			fftlen = std::max<int>(128, fftlen);
-			m_waterfall->setAutoFft(false, fftlen);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-QVariant WaterfallWidget::getParam(const QString & name)
-{
-	QVariant ret;
-
-	if (name.compare("fft", Qt::CaseInsensitive)) {
-	}
-
-	return ret;
-}
 
 void WaterfallWidget::initShortcuts()
 {

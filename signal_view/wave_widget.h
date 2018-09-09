@@ -27,7 +27,6 @@ signals:
 	void viewChanged(QRectF);
 
 public slots:
-	void visibleChanged(QRectF);
 	void syncView(QRectF);
 
 public:
@@ -54,6 +53,8 @@ private:
 	WaveLoader m_loader;
 
 	std::pair<double, double> m_currentTime;
+	bool m_needNotify;
+	QRectF m_visibleArea;
 };
 
 #endif //WAVE_WIDGET_H

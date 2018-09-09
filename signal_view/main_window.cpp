@@ -183,8 +183,6 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 
 	splitterWnd->setSizes(QList<int>() << 2 << 1);
 
-	connect(waterfallWnd, SIGNAL(visibleChanged(QRectF)), freqWnd, SLOT(visibleChanged(QRectF)));
-
 	return splitterWnd;
 }
 

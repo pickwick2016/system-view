@@ -2,9 +2,10 @@
 
 #include "waterfall.h"
 #include "misc.h"
+#include "reader.h"
+#include "fft.h"
 
-
-Waterfall::Waterfall(unsigned int fftlen)
+WaterfallLoader::WaterfallLoader(unsigned int fftlen)
 {
 	clear();
 
@@ -24,13 +25,13 @@ Waterfall::Waterfall(unsigned int fftlen)
 	m_fixFft = 256;
 }
 
-Waterfall::~Waterfall()
+WaterfallLoader::~WaterfallLoader()
 {
 	m_reader.reset();
 	m_fft.reset();
 }
 
-void Waterfall::setAutoFft(bool on, int fftlen)
+void WaterfallLoader::setAutoFft(bool on, int fftlen)
 {
 	m_isAutoFft = on;
 
@@ -39,7 +40,7 @@ void Waterfall::setAutoFft(bool on, int fftlen)
 	}
 }
 
-std::pair<int, int> Waterfall::dataSize()
+std::pair<int, int> WaterfallLoader::dataSize()
 {
 	int dataCount = ((m_currentRange.second - m_currentRange.first) / m_currentStep) + 1;
 	int freqCount = this->freqCount();
@@ -47,7 +48,7 @@ std::pair<int, int> Waterfall::dataSize()
 }
 
 
-void Waterfall::clear()
+void WaterfallLoader::clear()
 {
 	m_currentRange = {0, 0}; 
 	m_currentStep = 0;	
@@ -55,7 +56,7 @@ void Waterfall::clear()
 	m_datamap.clear();
 }
 
-unsigned int Waterfall::power(void * input, float * output, unsigned int fftlen, int type)
+unsigned int WaterfallLoader::power(void * input, float * output, unsigned int fftlen, int type)
 {
 	switch (type) {
 	case DataType::Int8:
@@ -95,7 +96,7 @@ unsigned int Waterfall::power(void * input, float * output, unsigned int fftlen,
 	return fftlen;
 }
 
-bool Waterfall::query(QRectF visible, std::pair<int, int> sizeHint)
+bool WaterfallLoader::calculateState(QRectF visible, std::pair<int, int> sizeHint)
 {
 	assert(m_reader);
 
@@ -151,7 +152,7 @@ bool Waterfall::query(QRectF visible, std::pair<int, int> sizeHint)
 	
 	return true;
 }
-bool Waterfall::reloadBuffer()
+bool WaterfallLoader::reloadBuffer()
 {
 	// 1.根据当前状态载入数据.
 	auto dataSize = this->dataSize();
@@ -191,7 +192,7 @@ bool Waterfall::reloadBuffer()
 	return true;
 }
 
-bool Waterfall::bufferToPixmap()
+bool WaterfallLoader::bufferToPixmap()
 {
 	assert(m_colormap);
 
@@ -225,12 +226,12 @@ bool Waterfall::bufferToPixmap()
 	return true;
 }
 
-void Waterfall::load(std::shared_ptr<Reader> reader)
+void WaterfallLoader::load(std::shared_ptr<Reader> reader)
 {
 	m_reader = reader;
 }
 
-bool Waterfall::load(const std::string & filename, int type, double samplerate)
+bool WaterfallLoader::load(const std::string & filename, int type, double samplerate)
 {
 	close();
 
@@ -243,7 +244,7 @@ bool Waterfall::load(const std::string & filename, int type, double samplerate)
 	return false;
 }
 
-void Waterfall::close()
+void WaterfallLoader::close()
 {
 	//assert(m_reader);
 
@@ -257,36 +258,42 @@ void Waterfall::close()
 	clear();
 }
 
-bool Waterfall::isLoaded()
+bool WaterfallLoader::isLoaded()
 {
 	return m_reader.get() != nullptr;
 }
 
-unsigned int Waterfall::freqCount()
+unsigned int WaterfallLoader::freqCount()
 {
 	return m_currentFft / (m_reader->channel() == 1 ? 2 : 1);
 }
 
-QRectF Waterfall::totalArea() 
+QRectF WaterfallLoader::totalArea() 
 {
-	QRectF rect;
-	if (m_reader) {
-		double fs = m_reader->sampleRate();
-		int step = (m_currentStep <= 0) ? m_currentFft : m_currentStep;
+	assert(m_reader);
 
-		double maxTime = (tool::round_down(m_reader->count() - 1, step) + std::max<int>(m_currentFft, step)) / fs;
-		//double maxTime = (tool::round_down(m_reader->count() - 1, step) + m_fftLen) * fs;
-		//double maxTime = (m_reader->count() - 1) * fs;
-		double maxFreq = (m_reader->channel() == 2) ? fs : fs / 2;
+	QRectF ret;
+	ret.setWidth(m_reader->maxTime());
+	ret.setHeight(m_reader->maxFreq());
 
-		rect.setRight(maxTime);
-		rect.setBottom(maxFreq);
-	}
+	return ret;
 
-	return rect;
+	//QRectF rect;
+	//if (m_reader) {
+	//	double fs = m_reader->sampleRate();
+	//	int step = (m_currentStep <= 0) ? m_currentFft : m_currentStep;
+
+	//	double maxTime = (tool::round_down(m_reader->count() - 1, step) + std::max<int>(m_currentFft, step)) / fs;
+	//	double maxFreq = (m_reader->channel() == 2) ? fs : fs / 2;
+
+	//	rect.setRight(maxTime);
+	//	rect.setBottom(maxFreq);
+	//}
+
+	//return rect;
 }
 
-QRectF Waterfall::currentArea()
+QRectF WaterfallLoader::pixmapArea()
 {
 	QRectF rect;
 	
@@ -298,18 +305,17 @@ QRectF Waterfall::currentArea()
 		double timeEnd = (tool::round_down(m_currentRange.second, (int) m_currentStep)
 			+ std::max<int>(m_currentFft, m_currentStep)) * ts; // TODO :CHECK
 
-		double freqEnd = (m_reader->channel() == 2) ? fs : fs / 2;
-
 		rect.setLeft(timeStart);
 		rect.setRight(timeEnd);
-		rect.setBottom(freqEnd);
+		
+		rect.setBottom(m_reader->maxFreq());
 	}
 
 	return rect;
 }
 
 
-uint32_t Waterfall::valueToColor(float val)
+uint32_t WaterfallLoader::valueToColor(float val)
 {
 	float val2 = tool::clamp<float>(val, -127, 128);
 	int v = (int) (val2 + 127);
@@ -324,12 +330,26 @@ inline int calculateIndex(int row, int col, std::pair<int, int> & s)
 }
 
 
-bool Waterfall::prepare(QRectF visible, std::pair<int, int> sizeHint)
+bool WaterfallLoader::prepare(QRectF visible, std::pair<int, int> sizeHint)
 {
-	if (!m_reader)
+	if (!m_reader) {
 		return false;
+	}
 
-	if (!query(visible, sizeHint)) {
+	//State newState = calculateState(visible, sizeHint);
+	//if (newState == m_state) {
+	//	return true;
+	//}
+
+	//bool ret = reload(newState);
+	//if (ret) {
+	//	m_state = newState;
+	//}
+
+	//return true;
+
+
+	if (!calculateState(visible, sizeHint)) {
 		return false;
 	}
 
@@ -355,7 +375,7 @@ bool Waterfall::prepare(QRectF visible, std::pair<int, int> sizeHint)
 	return true;
 }
 
-void Waterfall::setColorRange(std::pair<float, float> rng)
+void WaterfallLoader::setColorRange(std::pair<float, float> rng)
 {
 	m_colorRange = tool::range_normalize(rng);
 }

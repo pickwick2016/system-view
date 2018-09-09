@@ -6,7 +6,7 @@
 #include <QWidget>
 
 class Reader;
-class Waterfall;
+class WaterfallLoader;
 
 // 预定义操作类型.
 enum WaterfallCommand
@@ -71,6 +71,7 @@ public:
 	// 关闭数据文件.
 	void close();
 
+public:
 	// 数据空间（逻辑）大小.
 	QRectF totalArea();
 
@@ -82,12 +83,6 @@ public:
 
 	// 当前选区.
 	QRectF selectArea();
-		
-	// 设置参数.
-	bool setParam(const QString & name, QVariant value);
-	
-	// 获取参数.
-	QVariant getParam(const QString & name);
 
 protected:
 	virtual void paintEvent(QPaintEvent *event);
@@ -100,6 +95,8 @@ protected:
 	virtual void mouseReleaseEvent(QMouseEvent *evt);
 
 private:
+	void reload(QRectF area);
+
 	void drawTimeBar(QPainter & painter);
 	void drawFreqBar(QPainter & painter);
 	void drawData(QPainter & painter);
@@ -119,7 +116,7 @@ private:
 	void initShortcuts();
 
 private:
-	std::shared_ptr<Waterfall> m_waterfall;
+	std::shared_ptr<WaterfallLoader> m_loader;
 	
 	QRectF m_visibleArea; // 当前可视区.
 	

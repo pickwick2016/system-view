@@ -11,20 +11,19 @@
 #include <QRect>
 #include <QPixmap>
 
-#include "reader.h"
-#include "fft.h"
+class Fft;
+class Reader;
 
 /**
- * 瀑布图数据.
- *
- * 1、根据客户对指定时间段的需求，构建和提供瀑布图数据.
+ * 瀑布图数据载入器.
+ * 1、根据客户对指定时间段的需求，构建和提供瀑布图数据（准备一个满足用户需求的数据即可）.
  * 2、自动调整内部各项参数.
  */
-class Waterfall
+class WaterfallLoader
 {
 public:
-	Waterfall(unsigned int fftlen = 128);
-	~Waterfall();
+	WaterfallLoader(unsigned int fftlen = 128);
+	~WaterfallLoader();
 
 public:
 	// 载入数据.
@@ -50,7 +49,7 @@ public:
 	bool prepare(QRectF visible, std::pair<int, int> sizeHint = { 0, 0 });
 
 	// 当前数据的时间和频率范围（逻辑值，横向时间，纵向频谱）.
-	QRectF currentArea();
+	QRectF pixmapArea();
 
 	// 整体的逻辑时频范围.
 	QRectF totalArea();
@@ -64,6 +63,7 @@ public:
 	// 频谱数据大小 (freq_count, segment_count)
 	std::pair<int, int> dataSize();
 
+	//
 	std::pair<float, float> colorRange() { return m_colorRange; }
 
 	void setColorRange(std::pair<float, float> rng);
@@ -75,7 +75,7 @@ public:
 		
 private:
 	// 请求一定时间范围的数据.
-	bool query(QRectF visible, std::pair<int, int> sizeHint = { 0, 0 });
+	bool calculateState(QRectF visible, std::pair<int, int> sizeHint = { 0, 0 });
 
 	// 根据当前状态，重新载入数据.
 	bool reloadBuffer();
@@ -96,30 +96,31 @@ private:
 	
 
 private:
+	std::shared_ptr<Reader> m_reader;	// 读取器.
+
+	std::shared_ptr<Fft> m_fft; // fft 计算器.
+	std::vector<unsigned int> m_fftHints;
+
 	unsigned int m_stepAlign; // 对齐.
 
-	std::vector<unsigned int> m_fftHints;
 
 	std::pair<unsigned int, unsigned int> m_currentRange; //起始点范围（动态确定）
 	unsigned int m_currentStep;	// 步长（动态确定）.
 	unsigned int m_currentFft; // fft长度.
 
 	QPixmap m_pixmap;
-	std::vector<unsigned int> m_pixmapData;
-
-	std::vector<float> m_datamap;
+	std::vector<unsigned int> m_pixmapData; // 图像数据（元素为 uint32 的 RGBA 数据）
 	
-	std::shared_ptr<Reader> m_reader;	
-
-	std::shared_ptr<Fft> m_fft; // fft 计算器.
+	std::vector<float> m_datamap;
+	std::pair<float, float> m_valueRange;
 
 	std::pair<float, float> m_colorRange;
-	std::pair<float, float> m_valueRange;
 
 	std::function<std::tuple<int, int, int>(float, float, float)> m_colormap;
 
 	typedef std::tuple<decltype(m_currentFft), decltype(m_currentRange), decltype(m_currentStep)> BufferState;
 	BufferState m_currState, m_prevState;
+	
 	std::pair<float, float> m_prevColorRange;
 
 	bool m_isAutoFft;

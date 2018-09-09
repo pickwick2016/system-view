@@ -40,7 +40,7 @@ public:
 	virtual double maxFreq() { return (channel() == 2) ? sampleRate() : sampleRate() / 2; }
 	
 	// 最大时间值.
-	virtual double maxTime() { return count() / sampleRate(); }
+	virtual double maxTime() { return (count() - 1) / sampleRate(); }
 
 public:
 	/**
