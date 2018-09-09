@@ -62,6 +62,11 @@ WaveWidget::~WaveWidget()
 {
 }
 
+void WaveWidget::syncView(QRectF)
+{
+
+}
+
 void WaveWidget::load(std::shared_ptr<Reader> reader)
 {
 	m_loader.load(reader);

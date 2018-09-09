@@ -23,8 +23,12 @@ public:
 	WaveWidget(QWidget *parent = nullptr);
 	~WaveWidget();
 
+signals:
+	void viewChanged(QRectF);
+
 public slots:
 	void visibleChanged(QRectF);
+	void syncView(QRectF);
 
 public:
 	// ‘ÿ»Î ˝æ›.

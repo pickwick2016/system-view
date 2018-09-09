@@ -63,10 +63,7 @@ public:
 
 private:
 	void notify(unsigned int itemId, int action);
-
-//public:
-//	boost::signals2::signal<void(unsigned int /*itemId*/, int/*action*/)> m_signal;
-
+	
 private:
 	std::vector<std::shared_ptr<ProjectItem>> m_items;
 	unsigned int m_selection;	
@@ -76,8 +73,10 @@ private:
 /**
  * 项目条目.
  */
-class ProjectItem
+class ProjectItem : public QObject
 {
+	Q_OBJECT
+
 public:
 	ProjectItem();
 	virtual ~ProjectItem() {}
@@ -103,9 +102,19 @@ private:
  */
 class SignalFileItem : public ProjectItem
 {
+	Q_OBJECT
+
 public:
 	SignalFileItem();
 	SignalFileItem(const FileInfo & info);
+
+signals:
+	// 相关内容同步信号.
+	void syncView(QRectF view);
+
+public slots:
+	// 关联控件发生改变.
+	void viewChanged(QRectF view);
 
 public:
 	virtual std::string name();

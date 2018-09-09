@@ -99,8 +99,6 @@ void Project::select(unsigned int id)
 
 void Project::notify(unsigned int id, int action)
 {
-	//m_signal(id, action);
-
 	emit projectChanged(id, action);
 }
 
@@ -137,3 +135,7 @@ std::string SignalFileItem::info(const std::string & key)
 	return "";
 }
 
+void SignalFileItem::viewChanged(QRectF view)
+{
+	emit syncView(view);
+}

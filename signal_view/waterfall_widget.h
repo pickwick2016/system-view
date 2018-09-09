@@ -56,7 +56,10 @@ signals:
 	void positionMoved(QPointF pos);
 	
 	// 当前可视区域发生了变化.
-	void visibleChanged(QRectF area);
+	void viewChanged(QRectF area);
+
+public slots:
+	void syncView(QRectF area);
 
 public:
 	// 载入数据文件.
@@ -128,6 +131,8 @@ private:
 	typedef std::pair<WaterfallCommand, double> CommandState; // 命令状态.
 
 	std::map<CommandState, KeyState> m_shortcuts; // 命令快捷键表.
+
+	bool m_needNotify;
 };
 
 #endif //WATERFALL_WIDGET_H

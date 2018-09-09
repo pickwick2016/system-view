@@ -12,6 +12,24 @@
 
 namespace tool {
 
+	template <class T>
+	struct ValueGuard
+	{
+		ValueGuard(T & obj, T value) : m_obj(obj)
+		{
+			m_value = obj;
+			obj = value;
+		}
+
+		~ValueGuard()
+		{
+			m_obj = m_value;
+		}
+
+		T & m_obj;
+		T m_value;
+	};
+
 	template <class FwdIt, class T = FwdIt::value_type>
 	std::pair<T, T> minmax(FwdIt first, FwdIt last)
 	{

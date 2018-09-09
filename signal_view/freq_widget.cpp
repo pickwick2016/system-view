@@ -111,7 +111,7 @@ void FreqWidget::drawAxis()
 	m_chart->axisY()->setRange(rangeY.first, rangeY.second);
 }
 
-void FreqWidget::visibleChanged(QRectF r)
+void FreqWidget::syncView(QRectF r)
 {
 	reload(r.left());
 }

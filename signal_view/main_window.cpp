@@ -159,16 +159,22 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 	waterfallWnd->setFocusPolicy(Qt::StrongFocus);
 	waterfallWnd->load(fitem->reader());
 	connect(waterfallWnd, SIGNAL(positionMoved(QPointF)), this, SLOT(positionMoved(QPointF)));
-	stackWnd->addWidget(waterfallWnd);
+	connect(waterfallWnd, SIGNAL(viewChanged(QRectF)), fitem, SLOT(viewChanged(QRectF)));
+	connect(fitem, SIGNAL(syncView(QRectF)), waterfallWnd, SLOT(syncView(QRectF)));
 
 	WaveWidget * waveWnd = new WaveWidget();
 	waveWnd->load(fitem->reader());
-	stackWnd->addWidget(waveWnd);
+	connect(waveWnd, SIGNAL(viewChanged(QRectF)), fitem, SLOT(viewChanged(QRectF)));
+	connect(fitem, SIGNAL(syncView(QRectF)), waveWnd, SLOT(syncView(QRectF)));
 
 	FreqWidget * freqWnd = new FreqWidget();
 	freqWnd->load(fitem->reader());
+	//connect(freqWnd, SIGNAL(viewChanged(QRectF)), fitem, SLOT(viewChanged(QRectF)));
+	connect(fitem, SIGNAL(syncView(QRectF)), freqWnd, SLOT(syncView(QRectF)));
 
 	// ÅäÖÃ·Ö¸î´°¿Ú.
+	stackWnd->addWidget(waterfallWnd);
+	stackWnd->addWidget(waveWnd);
 	splitterWnd->insertWidget(0, stackWnd);
 	splitterWnd->setStretchFactor(0, 2);
 

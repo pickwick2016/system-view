@@ -24,7 +24,7 @@ public:
 	~FreqWidget();
 
 public slots:
-	void visibleChanged(QRectF);
+	void syncView(QRectF);
 
 public:
 	// ÔØÈëÊı¾İ.

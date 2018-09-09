@@ -10,6 +10,7 @@
 WaterfallWidget::WaterfallWidget(QWidget *parent)
 	: QWidget(parent)
 {
+	m_needNotify = true;
 	m_mousePressed = false;
 	m_waterfall.reset(new Waterfall());
 
@@ -25,6 +26,11 @@ WaterfallWidget::~WaterfallWidget()
 
 	m_waterfall.reset();
 	m_shortcuts.clear();
+}
+
+void WaterfallWidget::syncView(QRectF area)
+{
+	tool::ValueGuard<bool> notifyGuard(m_needNotify, false);
 }
 
 void WaterfallWidget::load(std::shared_ptr<Reader> reader)
@@ -259,7 +265,7 @@ void WaterfallWidget::setVisibleArea(QRectF r, bool redraw)
 			update(); //repaint();
 		}
 
-		emit visibleChanged(m_visibleArea);
+		emit viewChanged(m_visibleArea);
 	}
 }
 
