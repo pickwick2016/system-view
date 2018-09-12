@@ -20,7 +20,15 @@ int Reader::readAsReal64(double * data, unsigned int count, unsigned int positio
 	return outputCount;
 }
 
-
+double Reader::maxTime()
+{ 
+	auto cnt = count();
+	if (cnt > 0) {
+		return (cnt - 1) / sampleRate();
+	}
+	 
+	return 0;
+}
 
 FileReader::FileReader()
 {
@@ -152,14 +160,12 @@ int FileReader::channel()
 	case Real32:
 	case Real64:
 		return 1;
-
 	case Int8_2:
 	case Int16_2:
 	case Int32_2:
 	case Real32_2:
 	case Real64_2:
 		return 2;
-
 	default:
 		return 0;
 	}

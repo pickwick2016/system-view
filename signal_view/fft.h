@@ -12,19 +12,29 @@
  */
 class Fft
 {
+	enum Type
+	{
+		Forward = FFTW_FORWARD,
+		Backward = FFTW_BACKWARD,
+	};
+
 public:
 	Fft(unsigned int count = 1024, int type = FFTW_FORWARD);
 	~Fft();
 
 public:
-	static void cleanup();
+	// 重置Fft状态.
+	void reset(int fftlen, int type = FFTW_FORWARD);
 
-public:
 	// FFT 点数（2^N）
 	int length() { return m_fftlen; }
 
 	// FFT 类型（正变换、逆变换）
 	int type() { return m_type; }
+
+public:
+	// 清理全局资源.
+	static void cleanup();
 
 public:
 	// 计算fft数值. 错误返回0.
@@ -48,8 +58,6 @@ public:
 	template <class T>
 	int power(const std::complex<T> * in, float * out, int fftlen);
 
-private:
-	void reset(int fftlen, int type);
 
 private:
 	int m_type;

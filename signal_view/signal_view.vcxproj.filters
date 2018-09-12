@@ -81,6 +81,12 @@
     <ClCompile Include="data_type.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="paint_panel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="signal_widget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="main_window.h">
@@ -102,6 +108,9 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="project.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="signal_widget.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>
@@ -147,6 +156,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="data_type.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="paint_panel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="std_ext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

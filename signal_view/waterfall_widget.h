@@ -11,24 +11,6 @@ class WaterfallLoader;
 // 预定义操作类型.
 enum WaterfallCommand
 {
-	None,
-	Reset,
-	ResetTime,
-	ResetFreq,
-
-	TimeBackward,
-	TimeForward,
-	TimeZoomIn,
-	TimeZoomOut,
-	TimeZoomInAt,
-	TimeZoomOutAt,
-	FreqForward,
-	FreqBackward,
-	FreqZoomIn,
-	FreqZoomOut,
-	FreqZoomInAt,
-	FreqZoomOutAt,
-
 	ReloadSelect,
 
 	ColorRangeUp,

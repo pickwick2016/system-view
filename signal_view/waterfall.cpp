@@ -1,4 +1,5 @@
 #include <algorithm>
+//#include <boost/bind.hpp>
 
 #include "waterfall.h"
 #include "misc.h"
@@ -10,16 +11,14 @@ WaterfallLoader::WaterfallLoader(unsigned int fftlen)
 	clear();
 
 	m_fftHints = { 256, 512, 1024, 2048 };
-	m_currentFft = m_fftHints[0];
+	std::get<0>(m_state) = m_fftHints[0];
 	m_stepAlign = 128;
 
+	m_fft.reset(new Fft(std::get<0>(m_state)));
 
-	//m_reader.reset(new FileReader());
-	m_fft.reset(new Fft(m_currentFft));
+	m_colorRange = { -40.0f, 80.0f };
 
-	m_colorRange = { -40, 80 };
-
-	m_colormap = boost::bind(tool::colormap_other, _1, _2, _3);
+	m_colormap = std::bind(tool::colormap_other, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
 	m_isAutoFft = false;
 	m_fixFft = 256;
@@ -42,63 +41,32 @@ void WaterfallLoader::setAutoFft(bool on, int fftlen)
 
 std::pair<int, int> WaterfallLoader::dataSize()
 {
-	int dataCount = ((m_currentRange.second - m_currentRange.first) / m_currentStep) + 1;
-	int freqCount = this->freqCount();
+	int currentFft = std::get<0>(m_state);
+	std::pair<int, int> currentRange = std::get<1>(m_state);
+	int currentStep = std::get<2>(m_state);
+
+	int dataCount = ((currentRange.second - currentRange.first) / currentStep) + 1;
+	
+	int freqCount = currentFft / (m_reader->channel() == 1 ? 2 : 1);
 	return { freqCount, dataCount };
 }
 
 
 void WaterfallLoader::clear()
 {
-	m_currentRange = {0, 0}; 
-	m_currentStep = 0;	
+	std::get<1>(m_state) = {0, 0}; 
+	std::get<2>(m_state) = 0;
 
 	m_datamap.clear();
 }
 
-unsigned int WaterfallLoader::power(void * input, float * output, unsigned int fftlen, int type)
-{
-	switch (type) {
-	case DataType::Int8:
-		m_fft->power((char *)input, output, fftlen);
-		break;
-	case DataType::Int16:
-		m_fft->power((short *)input, output, fftlen);
-		break;
-	case DataType::Int32:
-		m_fft->power((int *)input, output, fftlen);
-		break;
-	case DataType::Real32:
-		m_fft->power((float *)input, output, fftlen);
-		break;
-	case DataType::Real64:
-		m_fft->power((double *)input, output, fftlen);
-		break;
-	case DataType::Int8_2:
-		m_fft->power((std::complex<char> *)input, output, fftlen);
-		break;
-	case DataType::Int16_2:
-		m_fft->power((std::complex<short> *)input, output, fftlen);
-		break;
-	case DataType::Int32_2:
-		m_fft->power((std::complex<int> *)input, output, fftlen);
-		break;
-	case DataType::Real32_2:
-		m_fft->power((std::complex<float> *)input, output, fftlen);
-		break;
-	case DataType::Real64_2:
-		m_fft->power((std::complex<double> *)input, output, fftlen);
-		break;
-		
-	default:
-		return 0;
-	}
-	return fftlen;
-}
-
-bool WaterfallLoader::calculateState(QRectF visible, std::pair<int, int> sizeHint)
+WaterfallLoader::State WaterfallLoader::calculateState(QRectF visible, std::pair<int, int> sizeHint)
 {
 	assert(m_reader);
+
+	unsigned int currentFft = 0;
+	unsigned int currentStep = 0;
+	std::pair<unsigned int, unsigned int > currentRange;
 
 	double fs = m_reader->sampleRate();
 
@@ -110,18 +78,18 @@ bool WaterfallLoader::calculateState(QRectF visible, std::pair<int, int> sizeHin
 
 			double fs2 = fs / (m_reader->channel() == 1 ? 2 : 1);
 
-			m_currentFft = m_fftHints.back();
+			currentFft = m_fftHints.back();
 			for (int i = 0; i < m_fftHints.size(); i++) {
 				double step = fs2 / m_fftHints[i];
 				if (step < freqStep) {
-					m_currentFft = m_fftHints[i];
+					currentFft = m_fftHints[i];
 					break;
 				}
 			}
 		}
 	}
 	else {
-		m_currentFft = m_fixFft;
+		currentFft = m_fixFft;
 	}
 	
 
@@ -133,27 +101,30 @@ bool WaterfallLoader::calculateState(QRectF visible, std::pair<int, int> sizeHin
 	if (timeHint > 0) {
 		int temp = tool::round_down((pos2 - pos1) / timeHint, (int) m_stepAlign);
 		int step = std::max<int>(temp, m_stepAlign);
-		m_currentStep = step;
+		currentStep = step;
 	}
 	else {
-		m_currentStep = m_stepAlign;
+		currentStep = m_stepAlign;
 	}
 
-	int align = m_currentStep;
+	int align = currentStep;
 
 	pos1 = tool::round_down(pos1, align);
 	pos2 = tool::round_down(pos2, align);
 	
-	if (pos1 >= m_reader->count()) {
-		return false;
+	if (pos1 < m_reader->count()) {
+		currentRange = { pos1, pos2 };
 	}
-
-	m_currentRange = { pos1, pos2 };
 	
-	return true;
+	return {currentFft, currentRange, currentStep};
 }
-bool WaterfallLoader::reloadBuffer()
+
+bool WaterfallLoader::reloadValues()
 {
+	auto currentFft = std::get<0>(m_state);
+	auto currentRange = std::get<1>(m_state);
+	auto currentStep = std::get<2>(m_state);
+
 	// 1.根据当前状态载入数据.
 	auto dataSize = this->dataSize();
 
@@ -164,17 +135,17 @@ bool WaterfallLoader::reloadBuffer()
 		m_datamap.resize(segments * freqs);
 	}
 
-	std::vector<char> tempBuffer(m_currentFft * sizeof(double) * 2); // 临时缓冲区.
+	std::vector<char> tempBuffer(currentFft * sizeof(double) * 2); // 临时缓冲区.
 	for (int si = 0; si < segments; si++) {
 
 		memset(tempBuffer.data(), 0, tempBuffer.size());
 
-		int readPos = m_currentRange.first + si * m_currentStep;
-		int getCount = m_reader->read((void *)tempBuffer.data(), m_currentFft, readPos);
+		int readPos = currentRange.first + si * currentStep;
+		int getCount = m_reader->read((void *)tempBuffer.data(), currentFft, readPos);
 		
 		void * input = (void *)tempBuffer.data();
 		float * output = m_datamap.data() + si * freqs;
-		auto ret = power(input, output, m_currentFft, m_reader->type());
+		auto ret = m_fft->power(input, output, currentFft, m_reader->type());
 		if (ret == 0) {
 			return false;
 		}
@@ -186,13 +157,13 @@ bool WaterfallLoader::reloadBuffer()
 		m_valueRange.second = *mm.second;
 	}
 	else {
-		m_valueRange = { 0, 0 };
+		m_valueRange = { 0.f, 0.f };
 	}
 	
 	return true;
 }
 
-bool WaterfallLoader::bufferToPixmap()
+void WaterfallLoader::reloadPixmap()
 {
 	assert(m_colormap);
 
@@ -222,8 +193,6 @@ bool WaterfallLoader::bufferToPixmap()
 	// 2.转储至 Pixmap
 	QImage image((uchar *)m_pixmapData.data(), segments, freqs, QImage::Format_ARGB32);
 	m_pixmap = QPixmap::fromImage(image);
-
-	return true;
 }
 
 void WaterfallLoader::load(std::shared_ptr<Reader> reader)
@@ -246,13 +215,6 @@ bool WaterfallLoader::load(const std::string & filename, int type, double sample
 
 void WaterfallLoader::close()
 {
-	//assert(m_reader);
-
-	//FileReader * freader = dynamic_cast<FileReader *>(m_reader.get());
-	//if (freader) {
-	//	freader->close();
-	//}
-
 	m_reader.reset();
 
 	clear();
@@ -261,11 +223,6 @@ void WaterfallLoader::close()
 bool WaterfallLoader::isLoaded()
 {
 	return m_reader.get() != nullptr;
-}
-
-unsigned int WaterfallLoader::freqCount()
-{
-	return m_currentFft / (m_reader->channel() == 1 ? 2 : 1);
 }
 
 QRectF WaterfallLoader::totalArea() 
@@ -277,33 +234,23 @@ QRectF WaterfallLoader::totalArea()
 	ret.setHeight(m_reader->maxFreq());
 
 	return ret;
-
-	//QRectF rect;
-	//if (m_reader) {
-	//	double fs = m_reader->sampleRate();
-	//	int step = (m_currentStep <= 0) ? m_currentFft : m_currentStep;
-
-	//	double maxTime = (tool::round_down(m_reader->count() - 1, step) + std::max<int>(m_currentFft, step)) / fs;
-	//	double maxFreq = (m_reader->channel() == 2) ? fs : fs / 2;
-
-	//	rect.setRight(maxTime);
-	//	rect.setBottom(maxFreq);
-	//}
-
-	//return rect;
 }
 
 QRectF WaterfallLoader::pixmapArea()
 {
 	QRectF rect;
+
+	int currentFft = std::get<0>(m_state);
+	std::pair<int, int> currentRange = std::get<1>(m_state);
+	int currentStep = std::get<2>(m_state);
 	
 	if (m_reader && m_reader->sampleRate() > 0.0f) {
 		double fs = m_reader->sampleRate();
 		double ts = 1 / fs;
 
-		double timeStart = m_currentRange.first * ts;
-		double timeEnd = (tool::round_down(m_currentRange.second, (int) m_currentStep)
-			+ std::max<int>(m_currentFft, m_currentStep)) * ts; // TODO :CHECK
+		double timeStart = currentRange.first * ts;
+		double timeEnd = (tool::round_down(currentRange.second, (int)currentStep)
+			+ std::max<int>(currentFft, currentStep)) * ts; // TODO :CHECK
 
 		rect.setLeft(timeStart);
 		rect.setRight(timeEnd);
@@ -329,6 +276,24 @@ inline int calculateIndex(int row, int col, std::pair<int, int> & s)
 	return row * s.first + col;
 }
 
+bool WaterfallLoader::reload(WaterfallLoader::State state)
+{
+	State oldState = m_state;
+	m_state = state;
+	
+	bool bufferDirty = (m_state != oldState);
+	if (!bufferDirty) {
+		return true;
+	}
+
+	if (reloadValues()) {
+		reloadPixmap();
+		return true;
+	}
+
+	m_state = oldState;
+	return false;
+}
 
 bool WaterfallLoader::prepare(QRectF visible, std::pair<int, int> sizeHint)
 {
@@ -336,46 +301,20 @@ bool WaterfallLoader::prepare(QRectF visible, std::pair<int, int> sizeHint)
 		return false;
 	}
 
-	//State newState = calculateState(visible, sizeHint);
-	//if (newState == m_state) {
-	//	return true;
-	//}
-
-	//bool ret = reload(newState);
-	//if (ret) {
-	//	m_state = newState;
-	//}
-
-	//return true;
-
-
-	if (!calculateState(visible, sizeHint)) {
-		return false;
+	State newState = calculateState(visible, sizeHint);
+	if (newState == m_state) {
+		return true;
 	}
 
-	m_currState = { m_currentFft, m_currentRange, m_currentStep };
-
-	bool bufferDirty = (m_currState != m_prevState);
-	bool colorDirty = (m_prevColorRange != m_colorRange);
-
-	if (bufferDirty) {
-		if (! reloadBuffer()) {
-			return false;
-		}
-		m_prevState = m_currState;
-	}
-
-	if (bufferDirty || colorDirty) {
-		if (! bufferToPixmap()) {
-			return false;
-		}
-		m_prevColorRange = m_colorRange;
-	}
-		
-	return true;
+	bool ret = reload(newState);
+	return ret;
 }
 
 void WaterfallLoader::setColorRange(std::pair<float, float> rng)
 {
-	m_colorRange = tool::range_normalize(rng);
+	auto rng2 = tool::range_normalize(rng);
+	if (m_colorRange != rng2) {
+		m_colorRange = rng2;
+		reloadPixmap();
+	}
 }

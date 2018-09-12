@@ -3,14 +3,18 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <memory>
 #include <utility>
 
 #include <QRect>
 
+#include "std_ext.h"
 
 namespace tool {
+
+
 
 	// ÊýÖµÊØ»¤.
 	template <class T>
@@ -33,19 +37,7 @@ namespace tool {
 		T m_oldValue;
 	};
 
-	template <class FwdIt, class T = FwdIt::value_type>
-	std::pair<T, T> minmax(FwdIt first, FwdIt last)
-	{
-		auto mm = std::minmax_element(first, last);
-		return { *(mm.first), *(mm.second) };
-	}
 
-	template <class T>
-	std::pair<T, T> minmax(T * first, T * last)
-	{
-		auto mm = std::minmax_element(first, last);
-		return { *(mm.first), *(mm.second) };
-	}
 
 	int convert(void * input, double * output, int count, int datatype);
 

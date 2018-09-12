@@ -64,7 +64,7 @@ bool WaveLoader::prepare(std::pair<double, double> timeRange, int countHint)
 		m_state = newState;
 	}
 
-	return true;
+	return ret;
 }
 
 bool WaveLoader::reload(State state)
@@ -100,6 +100,7 @@ void WaveLoader::reload1(State state)
 	if (m_reader->channel() == 1) {
 		m_values[0].resize(readCount);
 		std::copy(temp.begin(), temp.begin() + readCount, m_values[0].begin());
+		m_valueRange[0] = tool::minmax(m_values[0].begin(), m_values[0].begin() + readCount);
 	}
 	else if (m_reader->channel() == 2) {
 		int count2 = readCount / 2;
@@ -107,10 +108,19 @@ void WaveLoader::reload1(State state)
 		m_values[0].resize(count2);
 		m_values[1].resize(count2);
 
+		m_valueRange[0] = { -1, 1 };
+		m_valueRange[1] = { -1, 1 };
+
 		std::complex<double> * temp2 = (std::complex<double> *) temp.data();
 		for (int i = 0; i < count2; i++) {
 			m_values[0][i] = temp2[i].real();
 			m_values[1][i] = temp2[i].imag();
+
+			m_valueRange[0].first = std::min<double>(m_valueRange[0].first, temp2[i].real());
+			m_valueRange[0].second = std::max<double>(m_valueRange[0].second, temp2[i].real());
+
+			m_valueRange[1].first = std::min<double>(m_valueRange[1].first, temp2[i].imag());
+			m_valueRange[1].second = std::max<double>(m_valueRange[1].second, temp2[i].imag());
 		}
 	}
 }
@@ -128,12 +138,18 @@ void WaveLoader::reload2(State state)
 	m_values[0].resize(count * 2);
 	m_values[1].resize(count * 2);
 
+	m_valueRange[0] = { -1, 1 };
+	m_valueRange[1] = { -1, 1 };
+
 	for (int pos = start, i = 0; pos <= end; pos += step, i++) {
 		int readCount = m_reader->readAsReal64(temp.data(), chunk, pos);
 		
 		if (m_reader->channel() == 1) {
 			auto mm = tool::minmax(temp.begin(), temp.begin() + readCount);
 			((std::pair<double, double> *) m_values[0].data())[i] = mm;
+
+			m_valueRange[0].first = std::min<double>(m_valueRange[0].first, mm.first);
+			m_valueRange[0].second = std::max<double>(m_valueRange[0].second, mm.second);
 		}
 		else if (m_reader->channel() == 2) {
 			int count2 = readCount / 2;
@@ -152,6 +168,12 @@ void WaveLoader::reload2(State state)
 
 			auto mm2 = tool::minmax(imags.begin(), imags.end());
 			((std::pair<double, double> *) m_values[1].data())[i] = mm2;
+
+			m_valueRange[0].first = std::min<double>(m_valueRange[0].first, mm1.first);
+			m_valueRange[0].second = std::max<double>(m_valueRange[0].second, mm1.second);
+
+			m_valueRange[1].first = std::min<double>(m_valueRange[1].first, mm2.first);
+			m_valueRange[1].second = std::max<double>(m_valueRange[1].second, mm2.second);
 		}
 	}
 }
@@ -191,7 +213,11 @@ std::pair<double, double> * WaveLoader::value2(int channel)
 
 std::pair<double, double> WaveLoader::valueRange(int channel)
 {
-	return {0, 1};
+	if (channel >= 0 && channel < m_reader->channel()) {
+		return m_valueRange[channel];
+	}
+
+	return m_valueRange[0];
 }
 
 bool WaveLoader::isZipped()
@@ -304,10 +330,10 @@ std::pair<float, float> FreqLoader::valueRange()
 		return { *(mm.first), *(mm.second) };
 	}
 
-	return { 0, 1 };
+	return { 0.0f, 1.0f };
 }
 
-std::pair<float, float> FreqLoader::freqRange()
+std::pair<double, double> FreqLoader::freqRange()
 {
 	return { 0, m_reader->maxFreq() };
 }

@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <complex>
-#include <boost/bind.hpp>
 
 #include <QMdiSubWindow>
 #include <QTreeWidget>
@@ -61,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	// 测试部分代码.
 #ifdef _DEBUG
-	m_project->add("c:/data/bingle.dat", DataType::Real32, 1);
+	m_project->add("c:/data/bingle.dat", DataType::Real32_2, 100);
 #endif //_DEBUG
 }
 
@@ -163,6 +162,7 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 	connect(fitem, SIGNAL(syncView(QRectF)), waterfallWnd, SLOT(syncView(QRectF)));
 
 	WaveWidget * waveWnd = new WaveWidget();
+	waveWnd->setFocusPolicy(Qt::StrongFocus);
 	waveWnd->load(fitem->reader());
 	connect(waveWnd, SIGNAL(viewChanged(QRectF)), fitem, SLOT(viewChanged(QRectF)));
 	connect(fitem, SIGNAL(syncView(QRectF)), waveWnd, SLOT(syncView(QRectF)));
@@ -173,8 +173,8 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 	connect(fitem, SIGNAL(syncView(QRectF)), freqWnd, SLOT(syncView(QRectF)));
 
 	// 配置分割窗口.
-	stackWnd->addWidget(waterfallWnd);
 	stackWnd->addWidget(waveWnd);
+	stackWnd->addWidget(waterfallWnd);
 	splitterWnd->insertWidget(0, stackWnd);
 	splitterWnd->setStretchFactor(0, 2);
 

@@ -3,19 +3,14 @@
 
 #include <memory>
 
-#include <QWidget>
-#include <QtCharts/QChartGlobal>
-
-QT_CHARTS_BEGIN_NAMESPACE
-class QChart;
-class QLineSeries;
-QT_CHARTS_END_NAMESPACE
+#include "paint_panel.h"
 
 #include "signal_loader.h"
+#include "signal_widget.h"
 
 
 // 频谱控件.
-class WaveWidget : public QWidget
+class WaveWidget : public SignalWidget
 {
 	Q_OBJECT
 
@@ -33,28 +28,36 @@ public:
 	// 载入数据.
 	void load(std::shared_ptr<Reader> reader);
 
+protected:
+	virtual void paintEvent(QPaintEvent *event);
+
+protected:
+	virtual void setVisibleArea(QRectF);
+	virtual QRectF totalArea();
+
 private:
 	// 重新载入指定时刻的内容.
 	bool reload(double t1, double t2);
 
-	// 绘制数值.
-	void drawValues();
+	// 根据当前loader状态，更新线条.
+	void updateChannel(int idx);
 
-	void drawChannel(int idx);
+	void drawTimeMarker(QPainter * painter);
 
-	// 重绘坐标轴.
-	void drawAxis();
+	void drawChannel(QPainter * painter, int idx);
+
+	// 获取不同区域视口. 0-时间标尺；10-通道1数据；11-通道1标尺；20-通道2数据；21-通道2标尺.
+	QRectF viewport(int idx);
 
 private:
-	QtCharts::QChart * m_chart;
-
-	std::vector<QtCharts::QLineSeries *> m_lines;
+	LinePanel m_lines[2];
+	MarkerPanel m_timeMarker;
+	MarkerPanel m_valueMarker[2];
 	
 	WaveLoader m_loader;
 
-	std::pair<double, double> m_currentTime;
 	bool m_needNotify;
-	QRectF m_visibleArea;
+
 };
 
 #endif //WAVE_WIDGET_H

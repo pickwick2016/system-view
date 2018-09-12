@@ -90,7 +90,7 @@ namespace tool {
 		float val = tool::clamp<float>(v, vmin, vmax);
 		float rval = (val - vmin) / (vmax - vmin); // πÈ“ªªØ
 
-		return { rval * 255, rval * 255, rval * 255 };
+		return std::make_tuple<int, int, int>(rval * 255, rval * 255, rval * 255);
 	}
 
 	std::tuple<int, int, int> colormap_other(float v, float vmin, float vmax)
@@ -102,7 +102,7 @@ namespace tool {
 		float green = clamp<float>(2 - abs(2 * t), 0, 1);
 		float blue = clamp<float>(2 - abs(2 * t + 2), 0, 1);
 
-		return { red * 255, green * 255, blue * 255 };
+		return std::make_tuple<int, int, int>(red * 255, green * 255, blue * 255);
 	}
 
 	QRectF clip(QRectF r, QRectF all)

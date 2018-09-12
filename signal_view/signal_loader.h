@@ -96,7 +96,7 @@ public:
 	std::pair<float, float> valueRange();
 
 	// 对应频率范围.
-	std::pair<float, float> freqRange();
+	std::pair<double, double> freqRange();
 	
 	// 频率步进.
 	double freqStep();
@@ -117,7 +117,6 @@ private:
 	std::vector<float> m_values;
 
 	State m_state;
-	//int m_position;
 	int m_valueCount;
 };
 
