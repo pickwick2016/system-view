@@ -217,6 +217,10 @@ void WaveWidget::setVisibleArea(QRectF r)
 		if (reload(area.left(), area.right())) {
 			SignalWidget::setVisibleArea(area);
 			update();
+
+			if (m_needNotify) {
+				emit viewChanged(visibleArea());
+			}
 		}
 	}
 }

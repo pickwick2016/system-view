@@ -17,11 +17,9 @@ class WaveWidget : public SignalWidget
 public:
 	WaveWidget(QWidget *parent = nullptr);
 	~WaveWidget();
-
-signals:
-	void viewChanged(QRectF);
-
+	
 public slots:
+	// 处理外部提示的可视区变化（不再对外发变动信号）
 	void syncView(QRectF);
 
 public:

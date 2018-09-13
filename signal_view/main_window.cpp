@@ -60,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	// ²âÊÔ²¿·Ö´úÂë.
 #ifdef _DEBUG
-	m_project->add("c:/data/bingle.dat", DataType::Real32_2, 100);
+	m_project->add("c:/data/bingle.dat", DataType::Real32, 100);
 #endif //_DEBUG
 }
 

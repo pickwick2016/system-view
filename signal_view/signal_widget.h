@@ -35,6 +35,10 @@ class SignalWidget : public QWidget
 public:
 	SignalWidget(QWidget * parent = nullptr);
 
+signals:
+	// 当前可视区域发生了变化.
+	void viewChanged(QRectF area);
+
 protected:
 	virtual void keyPressEvent(QKeyEvent * evt);
 	virtual void wheelEvent(QWheelEvent * evt);
