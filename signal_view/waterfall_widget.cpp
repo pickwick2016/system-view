@@ -9,8 +9,7 @@
 #include "misc.h"
 #include "paint_panel.h"
 
-WaterfallWidget::WaterfallWidget(QWidget *parent)
-	: QWidget(parent)
+WaterfallWidget::WaterfallWidget(QWidget *parent) : SignalWidget(parent)
 {
 	m_needNotify = true;
 	m_mousePressed = false;
@@ -19,7 +18,7 @@ WaterfallWidget::WaterfallWidget(QWidget *parent)
 	setMouseTracking(true);
 	setMinimumSize(QSize(100, 75));
 
-	initShortcuts();
+	appendShortcuts();
 }
 
 WaterfallWidget::~WaterfallWidget()
@@ -34,18 +33,13 @@ void WaterfallWidget::syncView(QRectF area)
 {
 	tool::ValueGuard<bool> notifyGuard(m_needNotify, false);
 
-	QRectF newArea = m_visibleArea;
+	QRectF newArea = visibleArea();
 	if (area.width() > 0) {
 		newArea.setLeft(area.left());
 		newArea.setRight(area.right());
 	}
 
-	if (area.height() > 0) {
-		newArea.setTop(area.top());
-		newArea.setBottom(area.bottom());
-	}
-
-	if (newArea != m_visibleArea) {
+	if (newArea != visibleArea()) {
 		setVisibleArea(newArea);
 	}
 }
@@ -59,13 +53,15 @@ void WaterfallWidget::load(std::shared_ptr<Reader> reader)
 {
 	m_loader->load(reader);
 
-	bool loaded = m_loader->isLoaded();
-	if (loaded) {
-		m_visibleArea = m_loader->totalArea();
-	}
-	else {
-		m_visibleArea = QRectF();
-	}
+	executeCommand(SignalCommand::XY_Reset);
+	
+	//bool loaded = m_loader->isLoaded();
+	//if (loaded) {
+	//	m_visibleArea = m_loader->totalArea();
+	//}
+	//else {
+	//	m_visibleArea = QRectF();
+	//}
 }
 
 bool WaterfallWidget::load(QString filename, int type, double samplerate)
@@ -73,14 +69,16 @@ bool WaterfallWidget::load(QString filename, int type, double samplerate)
 	assert(m_loader);
 
 	m_loader->load(filename.toStdString(), type, samplerate);
-	
+
+	executeCommand(SignalCommand::XY_Reset);
+	//
 	bool loaded = m_loader->isLoaded();
-	if (loaded) {
-		m_visibleArea = m_loader->totalArea();
-	}
-	else {
-		m_visibleArea = QRectF();
-	}
+	//if (loaded) {
+	//	m_visibleArea = m_loader->totalArea();
+	//}
+	//else {
+	//	m_visibleArea = QRectF();
+	//}
 
 	return loaded;
 }
@@ -121,9 +119,11 @@ void WaterfallWidget::drawTimeBar(QPainter & painter)
 	if (bound.isEmpty())
 		return;
 
+	QRectF visibleArea = this->visibleArea();
+
 	MarkerPanel marker;
 	marker.setRect(bound);
-	marker.setRange({ m_visibleArea.left(), m_visibleArea.right() });
+	marker.setRange({ visibleArea.left(), visibleArea.right() });
 	marker.paint(&painter);
 }
 
@@ -133,10 +133,12 @@ void WaterfallWidget::drawFreqBar(QPainter & painter)
 	if (bound.isEmpty())
 		return;
 
+	QRectF visibleArea = this->visibleArea();
+
 	MarkerPanel marker;
 	marker.setRect(bound);
 	marker.setDirection(1);
-	marker.setRange({ m_visibleArea.top(), m_visibleArea.bottom() });
+	marker.setRange({ visibleArea.top(), visibleArea.bottom() });
 	marker.paint(&painter);
 }
 
@@ -144,7 +146,7 @@ void WaterfallWidget::drawData(QPainter & painter)
 {
 	QRectF bound = this->viewport(); // 控件视口（像素，设备）
 
-	QRectF visibleArea = m_visibleArea;
+	QRectF visibleArea = this->visibleArea();
 
 	if (m_loader->prepare(visibleArea, { 200, 100 })) {
 		painter.setClipRect(bound);
@@ -234,27 +236,26 @@ void WaterfallWidget::showEvent(QShowEvent * evt)
 
 QRectF WaterfallWidget::totalArea()
 {
-	return m_loader->totalArea();
+	if (m_loader)
+		return m_loader->totalArea();
+
+	return QRectF();
 }
 
-QRectF WaterfallWidget::visibleArea()
-{
-	return m_visibleArea;
-}
 
-void WaterfallWidget::setVisibleArea(QRectF r, bool redraw)
+
+void WaterfallWidget::setVisibleArea(QRectF r)
 {
 	QRectF newArea = tool::clip(r.normalized(), totalArea());
 	
-	if (newArea != m_visibleArea) {
-		m_visibleArea = newArea;
 
-		if (redraw) {
-			update(); //repaint();
-		}
+	if (newArea != visibleArea()) {
+		SignalWidget::setVisibleArea(newArea);
+
+		update(); //repaint();
 
 		if (m_needNotify) {
-			emit viewChanged(m_visibleArea);
+			emit viewChanged(visibleArea());
 		}
 	}
 }
@@ -265,7 +266,7 @@ void WaterfallWidget::wheelEvent(QWheelEvent * evt)
 
 	auto pos = evt->pos();
 	auto viewport = this->viewport();
-	auto pxy = tool::map(pos, viewport, tool::rectFlipY(m_visibleArea));
+	auto pxy = tool::map(pos, viewport, tool::rectFlipY(visibleArea()));
 	
 	auto angles = evt->angleDelta();
 
@@ -294,36 +295,26 @@ void WaterfallWidget::wheelEvent(QWheelEvent * evt)
 
 void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
 {
-	bool ctrl = evt->modifiers() & Qt::ControlModifier;
-	bool shift = evt->modifiers() & Qt::ShiftModifier;
-	bool alt = evt->modifiers() & Qt::AltModifier;
-
-	KeyState ks = { evt->key(), ctrl, shift, alt };
-	bool processed = false;
-
-	for (auto kv : m_shortcuts) {
-		if (kv.second == ks) {
-			CommandState cs = kv.first;
-			processed = executeCommand(cs.first, cs.second);
-			break;
-		}
-	}
-
-	if (processed) {
-		evt->accept();
+	SignalWidget::keyPressEvent(evt);
+	if (evt->isAccepted()) {
+		return;
 	}
 }
 
-bool WaterfallWidget::executeCommand(WaterfallCommand type, double param)
+bool WaterfallWidget::executeCommand(int cmd, QVariant param)
 {
+	if (SignalWidget::executeCommand(cmd, param)) {
+		return true;
+	}
+
 	bool dirty = false;
 
-	switch (type) {
+	switch (cmd) {
 	case ColorRangeDown:
 	case ColorRangeUp:
 	{
 		auto rng = m_loader->colorRange();
-		float diff = (type == ColorRangeUp) ? 5 : -5;
+		float diff = (cmd == ColorRangeUp) ? 5 : -5;
 		rng = tool::range_move<float>(rng, diff);
 		m_loader->setColorRange(rng);
 		dirty = true;
@@ -335,7 +326,7 @@ bool WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 	{
 		auto rng = m_loader->colorRange();
 		float width = tool::range_length(rng);
-		float diff = (type == ColorRangeAdd) ? width * 0.05 : width * -0.05;
+		float diff = (cmd == ColorRangeAdd) ? width * 0.05 : width * -0.05;
 
 		rng = tool::range_expand<float>(rng, diff);
 		m_loader->setColorRange(rng);
@@ -347,7 +338,7 @@ bool WaterfallWidget::executeCommand(WaterfallCommand type, double param)
 	{
 		std::pair<float, float> rng = m_loader->currentValueRange();
 		if (rng != std::pair<float, float>(0.0f, 0.0f)) {
-			float val = tool::range_length(rng) * param;
+			float val = tool::range_length(rng) * param.toDouble();
 			m_loader->setColorRange({ rng.first - val, rng.second + val });
 			dirty = true;
 		}
@@ -425,7 +416,7 @@ void WaterfallWidget::mouseReleaseEvent(QMouseEvent *evt)
 
 QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
 {
-	QRectF ret = m_visibleArea;
+	QRectF ret = visibleArea();
 	QRectF totalArea = this->totalArea();
 
 	//switch (cmd) {
@@ -522,30 +513,15 @@ QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
 }
 
 
-void WaterfallWidget::initShortcuts()
+void WaterfallWidget::appendShortcuts()
 {
-	m_shortcuts.clear();
-
 	// 1.初始化快捷键.
-	//m_shortcuts[{XY_Reset, 0}] = { Qt::Key_Q, false, false, false };
-	//m_shortcuts[{ResetTime, 0}] = { Qt::Key_Q, false, true, false };
-	//m_shortcuts[{ResetFreq, 0}] = { Qt::Key_Q, true, false, false };
+	m_shortcuts[ReloadSelect] = { Qt::Key_R, false, false, false };
+	m_shortcuts[ColorRangeAuto] = { Qt::Key_C, false, false, false };
+	//m_shortcuts[ToggleAutoFft] = { Qt::Key_F, false, false, false };
 
-	//m_shortcuts[{TimeBackward, 0.05}] = { Qt::Key_Left, false, false, false };
-	//m_shortcuts[{TimeForward, 0.051}] = { Qt::Key_Right, false, false, false };
-	//m_shortcuts[{TimeZoomIn, 0.1}] = { Qt::Key_Left, true, false, false };
-	//m_shortcuts[{TimeZoomOut, 0.1}] = { Qt::Key_Right, true, false, false };
-
-
-	//m_shortcuts[{FreqBackward, 0.05}] = { Qt::Key_Down, false, false, false };
-	//m_shortcuts[{FreqForward, 0.05}] = { Qt::Key_Up, false, false, false };
-	//m_shortcuts[{FreqZoomIn, 0.1}] = { Qt::Key_Down, true, false, false };
-	//m_shortcuts[{FreqZoomOut, 0.1}] = { Qt::Key_Up, true, false, false };
-
+	// 2.初始化命令参数.
+	m_commandParams[ReloadSelect] = QVariant(0.05);
+	m_commandParams[ColorRangeAuto] = QVariant(0.2);
 	
-	m_shortcuts[{ReloadSelect, 0.05}] = { Qt::Key_R, false, false, false };
-
-	m_shortcuts[{ColorRangeAuto, 0.2}] = { Qt::Key_C, false, false, false };
-
-	m_shortcuts[{ToggleAutoFft, 0}] = { Qt::Key_F, false, false, false };
 }

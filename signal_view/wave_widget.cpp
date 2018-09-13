@@ -10,6 +10,8 @@
 
 WaveWidget::WaveWidget(QWidget *parent) : SignalWidget(parent)
 {
+	setMinimumSize(QSize(100, 75));
+
 	m_needNotify = true;
 
 	for (int i = 0; i < 2; i++) {

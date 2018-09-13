@@ -3,7 +3,8 @@
 
 #include <functional>
 #include <memory>
-#include <QWidget>
+
+#include "signal_widget.h"
 
 class Reader;
 class WaterfallLoader;
@@ -11,7 +12,7 @@ class WaterfallLoader;
 // 预定义操作类型.
 enum WaterfallCommand
 {
-	ReloadSelect,
+	ReloadSelect = SignalCommand::User + 1,
 
 	ColorRangeUp,
 	ColorRangeDown,
@@ -25,7 +26,7 @@ enum WaterfallCommand
 /**
  * 时频图（瀑布图）控件.
  */
-class WaterfallWidget : public QWidget
+class WaterfallWidget : public SignalWidget
 {
 	Q_OBJECT
 
@@ -36,9 +37,6 @@ public:
 signals:
 	// 鼠标指向位置发生变化.
 	void positionMoved(QPointF pos);
-	
-	// 当前可视区域发生了变化.
-	void viewChanged(QRectF area);
 
 public slots:
 	void syncView(QRectF area);
@@ -55,13 +53,10 @@ public:
 
 public:
 	// 数据空间（逻辑）大小.
-	QRectF totalArea();
-
-	// 可视空间（逻辑）大小.
-	QRectF visibleArea();
+	virtual QRectF totalArea();
 
 	// 设置可视空间（逻辑）
-	void setVisibleArea(QRectF r, bool redraw = true);
+	virtual void setVisibleArea(QRectF r);
 
 	// 当前选区.
 	QRectF selectArea();
@@ -86,7 +81,7 @@ private:
 
 private:
 	// 执行预定义操作.
-	bool executeCommand(WaterfallCommand type, double param = 0);
+	virtual bool executeCommand(int cmd, QVariant param = QVariant());
 
 	// 获取不同数据的视口 0:main 1:time_bar 2:freq_bar
 	QRectF viewport(int tag = 0);
@@ -95,21 +90,16 @@ private:
 	QRectF setVisible(WaterfallCommand cmd, double param);
 
 	// 初始化命令列表.
-	void initShortcuts();
+	void appendShortcuts();
 
 private:
 	std::shared_ptr<WaterfallLoader> m_loader;
 	
-	QRectF m_visibleArea; // 当前可视区.
+	//QRectF m_visibleArea; // 当前可视区.
 	
 	bool m_mousePressed; // 鼠标是否拖拽.
 	QPointF m_dragStartPoint, m_dragEndPoint; // 拖拽鼠标起止点
 	QPointF m_dragStartPos, m_dragEndPos; // 拖拽逻辑起止点
-
-	typedef std::tuple<int, bool, bool, bool> KeyState; // 键盘状态.
-	typedef std::pair<WaterfallCommand, double> CommandState; // 命令状态.
-
-	std::map<CommandState, KeyState> m_shortcuts; // 命令快捷键表.
 
 	bool m_needNotify;
 };

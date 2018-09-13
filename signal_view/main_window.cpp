@@ -152,7 +152,7 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 	QSplitter * splitterWnd = new QSplitter(Qt::Vertical, this);
 
 	// 创建子窗口.
-	QStackedWidget * stackWnd = new QStackedWidget();
+	//QStackedWidget * stackWnd = new QStackedWidget();
 
 	WaterfallWidget * waterfallWnd = new WaterfallWidget();
 	waterfallWnd->setFocusPolicy(Qt::StrongFocus);
@@ -167,21 +167,22 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 	connect(waveWnd, SIGNAL(viewChanged(QRectF)), fitem, SLOT(viewChanged(QRectF)));
 	connect(fitem, SIGNAL(syncView(QRectF)), waveWnd, SLOT(syncView(QRectF)));
 
-	FreqWidget * freqWnd = new FreqWidget();
-	freqWnd->load(fitem->reader());
-	//connect(freqWnd, SIGNAL(viewChanged(QRectF)), fitem, SLOT(viewChanged(QRectF)));
-	connect(fitem, SIGNAL(syncView(QRectF)), freqWnd, SLOT(syncView(QRectF)));
+	//FreqWidget * freqWnd = new FreqWidget();
+	//freqWnd->load(fitem->reader());
+	//connect(fitem, SIGNAL(syncView(QRectF)), freqWnd, SLOT(syncView(QRectF)));
 
 	// 配置分割窗口.
-	stackWnd->addWidget(waveWnd);
-	stackWnd->addWidget(waterfallWnd);
-	splitterWnd->insertWidget(0, stackWnd);
-	splitterWnd->setStretchFactor(0, 2);
+	//stackWnd->addWidget(waveWnd);
+	//stackWnd->addWidget(waterfallWnd);
+	//splitterWnd->insertWidget(0, stackWnd);
+	splitterWnd->insertWidget(0, waveWnd);
+	splitterWnd->insertWidget(1, waterfallWnd);
 
-	splitterWnd->insertWidget(1, freqWnd);
+	splitterWnd->setStretchFactor(0, 1);
+
+	//splitterWnd->insertWidget(1, freqWnd);
 	splitterWnd->setStretchFactor(1, 1);
 
-	splitterWnd->setSizes(QList<int>() << 2 << 1);
 
 	return splitterWnd;
 }

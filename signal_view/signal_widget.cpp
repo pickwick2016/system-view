@@ -9,6 +9,7 @@ SignalWidget::SignalWidget(QWidget * parent) : QWidget(parent)
 	initShortcuts();
 }
 
+
 void SignalWidget::initShortcuts()
 {
 	m_shortcuts.clear();
@@ -99,13 +100,23 @@ bool SignalWidget::executeCommand(int cmd, QVariant param)
 	return true;
 }
 
-void SignalWidget::keyPressEvent(QKeyEvent * evt)
+
+SignalWidget::KeyState SignalWidget::makeKeyState(QKeyEvent * evt)
 {
+	assert(evt != nullptr);
+
 	bool ctrl = evt->modifiers() & Qt::ControlModifier;
 	bool shift = evt->modifiers() & Qt::ShiftModifier;
 	bool alt = evt->modifiers() & Qt::AltModifier;
-	
-	KeyState ks = { evt->key(), ctrl, shift, alt };
+
+	KeyState keystate = { evt->key(), ctrl, shift, alt };
+
+	return keystate;
+}
+
+void SignalWidget::keyPressEvent(QKeyEvent * evt)
+{
+	KeyState ks = makeKeyState(evt);
 
 	auto fit = std::find_if(m_shortcuts.begin(), m_shortcuts.end(), 
 		[=](auto it) { return it.second == ks; });

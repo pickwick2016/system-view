@@ -33,6 +33,9 @@ class SignalWidget : public QWidget
 	Q_OBJECT
 
 public:
+	typedef std::tuple<int, bool, bool, bool> KeyState; // ¼üÅÌ×´Ì¬.
+
+public:
 	SignalWidget(QWidget * parent = nullptr);
 
 signals:
@@ -56,13 +59,13 @@ protected:
 
 	virtual QRectF totalArea();
 
-public:
-	typedef std::tuple<int, bool, bool, bool> KeyState; // ¼üÅÌ×´Ì¬.
-	//typedef std::pair<WaterfallCommand, double> CommandState; // ÃüÁî×´Ì¬.
+	KeyState makeKeyState(QKeyEvent * evt);
+	
+protected:
+	std::map<int, KeyState> m_shortcuts; // ¿ì½İ¼ü.
+	std::map<int, QVariant> m_commandParams; // ÃüÁî²ÎÊı.
 
 private:
 	QRectF m_visibleArea;
 
-	std::map<int, KeyState> m_shortcuts; // ¿ì½İ¼ü.
-	std::map<int, QVariant> m_commandParams; // ÃüÁî²ÎÊı.
 };
