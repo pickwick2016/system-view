@@ -28,15 +28,20 @@ WaveLoader::State WaveLoader::calculateState(std::pair<double, double> timeRange
 	double fs = m_reader->sampleRate();
 
 	int start = std::max<int>(0, std::floor(timeRange.first * fs));
-	int end = std::min<int>(m_reader->count(), std::floor(timeRange.second * fs));
+	int end = std::min<int>(m_reader->count(), std::ceil(timeRange.second * fs) + 1);
 
 	int step = 1;
 	if (countHint > 0) {
 		int len = end - start;
 		int step2 = len / countHint;
-		step2 = tool::round_down(step2, m_align);
-		if (step2 > 0) {
+		if (step2 <= 2) {
+			step = 1;
+		}
+		else if (step2 < m_align) {
 			step = step2;
+		}
+		else {
+			step = tool::round_down(step2, m_align);
 		}
 	}
 
@@ -96,6 +101,9 @@ void WaveLoader::reload1(State state)
 
 	std::vector<double> temp(count * 2);
 	int readCount = m_reader->readAsReal64(temp.data(), count, start);
+	if (readCount <= 0) {
+		return;
+	}
 	
 	if (m_reader->channel() == 1) {
 		m_values[0].resize(readCount);
@@ -176,6 +184,15 @@ void WaveLoader::reload2(State state)
 			m_valueRange[1].second = std::max<double>(m_valueRange[1].second, mm2.second);
 		}
 	}
+}
+
+double WaveLoader::maxTime()
+{
+	if (m_reader) {
+		return m_reader->maxTime();
+	}
+
+	return 0;
 }
 
 std::pair<double, double> WaveLoader::timeRange()

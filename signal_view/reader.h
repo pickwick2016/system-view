@@ -31,10 +31,10 @@ public:
 	virtual double sampleRate() { return 1; }
 		
 	// 数据元素大小（字节数）.
-	virtual int itemSize() { return 0; }
+	virtual int itemSize();
 	
 	// 通道数量（1:单通道，2:IQ通道）
-	virtual int channel() { return 1; }
+	virtual int channel();
 
 	// 最大有效频率值.
 	virtual double maxFreq() { return (channel() == 2) ? sampleRate() : sampleRate() / 2; }
@@ -68,8 +68,6 @@ public:
 	virtual double sampleRate();
 	virtual unsigned int count();
 	virtual int type();
-	virtual int itemSize();
-	virtual int channel();
 
 public:
 	bool open(const std::string & filename, int datatype, double sampleRate = 1.0);

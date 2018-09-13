@@ -122,12 +122,27 @@
          </item>
          <item>
           <property name="text">
+           <string>uint-8</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>int-16</string>
           </property>
          </item>
          <item>
           <property name="text">
+           <string>uint-16</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>int-32</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>uint-32</string>
           </property>
          </item>
          <item>
@@ -147,12 +162,27 @@
          </item>
          <item>
           <property name="text">
+           <string>uint-8 : 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>int-16 : 2</string>
           </property>
          </item>
          <item>
           <property name="text">
+           <string>uint-16 : 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>int-32 : 2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>uint-32 : 2</string>
           </property>
          </item>
          <item>

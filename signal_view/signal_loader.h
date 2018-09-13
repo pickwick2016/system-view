@@ -40,8 +40,11 @@ public:
 	// 数据通道数量.
 	int channel();
 
+	double maxTime();
+
 	double timeStep();
 
+	// 当前时间范围.
 	std::pair<double, double> timeRange();
 
 	State state() { return m_state; }

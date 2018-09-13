@@ -36,10 +36,10 @@ protected:
 	virtual QRectF totalArea();
 
 private:
-	// 重新载入指定时刻的内容.
+	// 重新载入指定时刻的内容（只准备数据，不更新显示内容）.
 	bool reload(double t1, double t2);
 
-	// 根据当前loader状态，更新线条.
+	// 根据当前loader状态，更新线条数据（不更新显示内容）.
 	void updateChannel(int idx);
 
 	void drawTimeMarker(QPainter * painter);

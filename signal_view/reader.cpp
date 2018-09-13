@@ -2,7 +2,19 @@
 
 #include "reader.h"
 #include "misc.h"
+#include "data_type.h"
 
+int Reader::itemSize()
+{
+	int t = type();
+	return DataTypeSize((DataType) t);
+}
+
+int Reader::channel()
+{
+	int t = type();
+	return DataTypeChannel((DataType) t);
+}
 
 int Reader::readAsReal64(double * data, unsigned int count, unsigned int position)
 {
@@ -123,51 +135,4 @@ int FileReader::type()
 	return m_dataType;
 }
 
-int FileReader::itemSize() 
-{ 
-	switch (m_dataType) {
-	case Int8: 
-		return sizeof(char);
-	case Int16:
-		return sizeof(short);
-	case Int32: 
-		return sizeof(int);
-	case Real32:
-		return sizeof(float);
-	case Real64:
-		return sizeof(double);
-	case Int8_2:
-		return sizeof(char) * 2;
-	case Int16_2:
-		return sizeof(short) * 2;
-	case Int32_2:
-		return sizeof(int) * 2;
-	case Real32_2:
-		return sizeof(float) * 2;
-	case Real64_2:
-		return sizeof(double) * 2;
-	default:
-		return 0;
-	}
-}
-
-int FileReader::channel()
-{
-	switch (m_dataType) {
-	case Int8:
-	case Int16:
-	case Int32:
-	case Real32:
-	case Real64:
-		return 1;
-	case Int8_2:
-	case Int16_2:
-	case Int32_2:
-	case Real32_2:
-	case Real64_2:
-		return 2;
-	default:
-		return 0;
-	}
-}
 

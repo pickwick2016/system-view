@@ -180,6 +180,11 @@ namespace tool {
 	double range_split(std::pair<double, double> rng, int countHint, std::vector<double> & ret)
 	{
 		ret.clear();
+		
+		if (tool::range_length(rng) <= 0) {
+			return 0;
+		}
+
 		double len = range_length(rng);
 		double delta = range_length(rng) / countHint;
 		int k = std::floorf(std::log10f(delta));

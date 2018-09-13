@@ -11,7 +11,7 @@ public:
 	virtual ~PaintPanel() {}
 
 public:
-	virtual void paint(QPainter * painter) {}
+	virtual void paint(QPainter * painter);
 
 public:
 	void setRect(QRectF);
@@ -22,10 +22,15 @@ public:
 
 private:
 	QRectF m_rect;
-	bool m_visible;
+	bool  m_visible;
+
+protected:
+	QColor m_bgColor;
 };
 
-// 坐标面板.
+/** 
+ * 坐标面板.
+ */
 class MarkerPanel : public PaintPanel
 {
 public:
@@ -35,8 +40,8 @@ public:
 	virtual void paint(QPainter * painter);
 
 private:
-	void paintHorz(QPainter & painter, const std::vector<double> & values, QString fmtStr);
-	void paintVert(QPainter & painter, const std::vector<double> & values, QString fmtStr);
+	void paintHorz(QPainter * painter, const std::vector<double> & values, QString fmtStr);
+	void paintVert(QPainter * painter, const std::vector<double> & values, QString fmtStr);
 
 public:
 	void setDirection(int dir);
@@ -53,12 +58,13 @@ private:
 	std::pair<double, double> m_range;
 	int m_divides;
 
-	QColor m_bgColor;
 	QPen m_gridPen;
 	QPen m_labelPen;
 };
 
-// 绘线面板.
+/** 
+ * 绘线面板.
+ */
 class LinePanel : public PaintPanel
 {
 public:
@@ -68,7 +74,8 @@ public:
 	virtual void paint(QPainter * painter);
 
 private:
-	void paintLine(QPainter & painter);
+	// 绘制线条.
+	void paintLine(QPainter * painter);
 
 public:
 	// 设置逻辑范围.
