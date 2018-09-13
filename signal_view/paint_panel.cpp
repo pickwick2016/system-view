@@ -42,7 +42,7 @@ void MarkerPanel::paint(QPainter * painter)
 	painter->fillRect(bound, m_bgColor);
 
 	std::vector<double> values;
-	double step = tool::range_split(m_range, m_divides, values);
+	double step = tool::DivideRange(m_range, m_divides, values);
 	if (values.empty()) {
 		return;
 	}
@@ -72,7 +72,7 @@ void MarkerPanel::paintHorz(QPainter * painter, const std::vector<double> & valu
 	QRectF textRect(bound.topLeft(), QSizeF(bound.width() / m_divides, bound.height()));
 	painter->setPen(m_labelPen);
 	for (auto time : values) {
-		double ptx = tool::map<double>(time, m_range, { bound.left(), bound.right() });
+		double ptx = tool::Map<double>(time, m_range, { bound.left(), bound.right() });
 
 		painter->drawLine(QPointF(ptx, bound.bottom()), QPointF(ptx, bound.bottom() - 5));
 
@@ -91,7 +91,7 @@ void MarkerPanel::paintVert(QPainter * painter, const std::vector<double> & valu
 	QRectF textRect(bound.topLeft(), QSizeF(bound.width(), bound.height() / m_divides));
 	painter->setPen(m_labelPen);
 	for (auto time : values) {
-		double ptx = tool::map<double>(time, m_range, { bound.bottom(), bound.top() });
+		double ptx = tool::Map<double>(time, m_range, { bound.bottom(), bound.top() });
 
 		painter->drawLine(QPointF(bound.left(), ptx), QPointF(bound.left() + 5, ptx));
 
@@ -152,7 +152,7 @@ void LinePanel::paintLine(QPainter * painter)
 	if (count > 0) {
 		std::vector<QPointF> points(count);
 		for (int i = 0; i < count; i++) {
-			points[i] = tool::map(m_points[i], m_area, bound);
+			points[i] = tool::Map(m_points[i], m_area, bound);
 		}
 
 		painter->setPen(m_pen);

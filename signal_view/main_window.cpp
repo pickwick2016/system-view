@@ -145,15 +145,9 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 {
 	assert(fitem != nullptr);
 
-	// 整体分割结构.
-	// 上半部，层叠结构 a) waterfall  b） wave
-	// 下半部 freq
-
 	QSplitter * splitterWnd = new QSplitter(Qt::Vertical, this);
 
 	// 创建子窗口.
-	//QStackedWidget * stackWnd = new QStackedWidget();
-
 	WaterfallWidget * waterfallWnd = new WaterfallWidget();
 	waterfallWnd->setFocusPolicy(Qt::StrongFocus);
 	waterfallWnd->load(fitem->reader());
@@ -167,22 +161,18 @@ QWidget * MainWindow::makeSubWidgetForSignalFile(SignalFileItem * fitem)
 	connect(waveWnd, SIGNAL(viewChanged(QRectF)), fitem, SLOT(viewChanged(QRectF)));
 	connect(fitem, SIGNAL(syncView(QRectF)), waveWnd, SLOT(syncView(QRectF)));
 
-	//FreqWidget * freqWnd = new FreqWidget();
-	//freqWnd->load(fitem->reader());
-	//connect(fitem, SIGNAL(syncView(QRectF)), freqWnd, SLOT(syncView(QRectF)));
+	FreqWidget * freqWnd = new FreqWidget();
+	freqWnd->load(fitem->reader());
+	connect(fitem, SIGNAL(syncView(QRectF)), freqWnd, SLOT(syncView(QRectF)));
 
 	// 配置分割窗口.
-	//stackWnd->addWidget(waveWnd);
-	//stackWnd->addWidget(waterfallWnd);
-	//splitterWnd->insertWidget(0, stackWnd);
 	splitterWnd->insertWidget(0, waveWnd);
 	splitterWnd->insertWidget(1, waterfallWnd);
+	splitterWnd->insertWidget(2, freqWnd);
 
 	splitterWnd->setStretchFactor(0, 1);
-
-	//splitterWnd->insertWidget(1, freqWnd);
 	splitterWnd->setStretchFactor(1, 1);
-
+	splitterWnd->setStretchFactor(2, 4);
 
 	return splitterWnd;
 }
@@ -242,9 +232,9 @@ void MainWindow::toggleFreqView()
 	auto subWnd = ui.mdiArea->activeSubWindow();
 	if (subWnd) {
 		QSplitter * splitter = dynamic_cast<QSplitter *>(subWnd->widget());
-		if (splitter && splitter->widget(1)) {
-			bool vis = splitter->widget(1)->isVisible();
-			splitter->widget(1)->setVisible(! vis);
+		if (splitter && splitter->widget(2)) {
+			bool vis = splitter->widget(2)->isVisible();
+			splitter->widget(2)->setVisible(! vis);
 		}
 	}
 }
@@ -255,10 +245,8 @@ void MainWindow::toggleWaveView()
 	if (subWnd) {
 		QSplitter * splitter = dynamic_cast<QSplitter *>(subWnd->widget());
 		if (splitter && splitter->widget(0)) {
-			QStackedWidget * stackWnd = dynamic_cast<QStackedWidget *>(splitter->widget(0));
-			if (stackWnd) {
-				stackWnd->setCurrentIndex(1);
-			}
+			bool vis = splitter->widget(0)->isVisible();
+			splitter->widget(0)->setVisible(!vis);
 		}
 	}
 }
@@ -268,11 +256,9 @@ void MainWindow::toggleWaterfallView()
 	auto subWnd = ui.mdiArea->activeSubWindow();
 	if (subWnd) {
 		QSplitter * splitter = dynamic_cast<QSplitter *>(subWnd->widget());
-		if (splitter && splitter->widget(0)) {
-			QStackedWidget * stackWnd = dynamic_cast<QStackedWidget *>(splitter->widget(0));
-			if (stackWnd) {
-				stackWnd->setCurrentIndex(0);
-			}
+		if (splitter && splitter->widget(1)) {
+			bool vis = splitter->widget(1)->isVisible();
+			splitter->widget(1)->setVisible(!vis);
 		}
 	}
 }

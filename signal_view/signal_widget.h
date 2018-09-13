@@ -60,6 +60,9 @@ protected:
 	virtual QRectF totalArea();
 
 	KeyState makeKeyState(QKeyEvent * evt);
+	QRectF checkPointBound(QWheelEvent * evt);
+
+	virtual QRectF viewport(int tag) { return QRectF(); }
 	
 protected:
 	std::map<int, KeyState> m_shortcuts; // ¿ì½Ý¼ü.

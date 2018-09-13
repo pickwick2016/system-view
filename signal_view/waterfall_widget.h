@@ -65,8 +65,6 @@ protected:
 	virtual void paintEvent(QPaintEvent *event);
 	virtual void resizeEvent(QResizeEvent *event);
 	virtual void showEvent(QShowEvent * evt);
-	virtual void keyPressEvent(QKeyEvent * evt);
-	virtual void wheelEvent(QWheelEvent * evt);
 	virtual void mousePressEvent(QMouseEvent *evt);
 	virtual void mouseMoveEvent(QMouseEvent *evt);
 	virtual void mouseReleaseEvent(QMouseEvent *evt);
@@ -79,15 +77,12 @@ private:
 	void drawData(QPainter & painter);
 	void drawSelection(QPainter & painter);
 
-private:
+protected:
 	// 执行预定义操作.
 	virtual bool executeCommand(int cmd, QVariant param = QVariant());
 
-	// 获取不同数据的视口 0:main 1:time_bar 2:freq_bar
-	QRectF viewport(int tag = 0);
-
-	// 修改可视区.
-	QRectF setVisible(WaterfallCommand cmd, double param);
+	// 获取不同数据的视口
+	virtual QRectF viewport(int tag);
 
 	// 初始化命令列表.
 	void appendShortcuts();

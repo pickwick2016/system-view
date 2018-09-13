@@ -4,56 +4,6 @@
 
 namespace tool {
 
-	int convert(void * input, double * output, int count, int datatype)
-	{
-		switch (datatype) {
-		case DataType::Int8:
-			std::copy((char *)input, (char *)input + count, output);
-			break;
-
-		case DataType::Int16:
-			std::copy((short *)input, (short *)input + count, output);
-			break;
-
-		case DataType::Int32:
-			std::copy((int *)input, (int *)input + count, output);
-			break;
-
-		case DataType::Real32:
-			std::copy((float *)input, (float *)input + count * 2, output);
-			break;
-
-		case DataType::Real64:
-			std::copy((double *)input, (double *)input + count * 2, output);
-			break;
-
-		case DataType::Int8_2:
-			std::copy((char *)input, (char *)input + count * 2, output);
-			break;
-
-		case DataType::Int16_2:
-			std::copy((short *)input, (short *)input + count * 2, output);
-			break;
-
-		case DataType::Int32_2:
-			std::copy((int *)input, (int *)input + count * 2, output);
-			break;
-
-		case DataType::Real32_2:
-			std::copy((float *)input, (float *)input + count * 2, output);
-			break;
-
-		case DataType::Real64_2:
-			std::copy((double *)input, (double *)input + count * 2, output);
-			break;
-
-		default:
-			return 0;
-		}
-
-		return count;
-	}
-
 	std::tuple<int, int, int> colormap_rainbow(float v, float vmin, float vmax)
 	{
 		float red = 1, blue = 1, green = 1;
@@ -105,7 +55,7 @@ namespace tool {
 		return std::make_tuple<int, int, int>(red * 255, green * 255, blue * 255);
 	}
 
-	QRectF clip(QRectF r, QRectF all)
+	QRectF RectClip(const QRectF & r, const QRectF & all)
 	{
 		QRectF ret;
 		ret.setLeft(std::max<double>(r.left(), all.left()));
@@ -115,7 +65,7 @@ namespace tool {
 		return ret;
 	}
 
-	QRect clip(QRect r, QRect all)
+	QRect RectClip(const QRect & r, const QRect & all)
 	{
 		QRect ret;
 		ret.setLeft(std::min<int>(r.left(), all.left()));
@@ -125,17 +75,26 @@ namespace tool {
 		return ret;
 	}
 
-	QRectF adjust(QRectF r, QRectF all, bool keepsize)
+	QRectF RectAdjust(const QRectF & r, const QRectF & all, bool keepsize)
 	{
-		auto old = r;
-
-		auto x1x2 = range_adjust<double>({ r.left(), r.right() }, { all.left(), all.right() }, keepsize);
-		auto y1y2 = range_adjust<double>({ r.top(), r.bottom() }, { all.top(), all.bottom() }, keepsize);
-
-		return QRectF(QPointF(x1x2.first, y1y2.first), QPointF(x1x2.second, y1y2.second));
+		QRectF ret = RectAdjustX(r, all, keepsize);
+		ret = RectAdjustY(ret, all, keepsize);
+		return ret;
 	}
 
-	QRectF rectExpand(QRectF r, double v)
+	QRectF RectAdjustX(const QRectF & r, const QRectF & all, bool keepsize)
+	{
+		auto x1x2 = range_adjust<double>(RectRangeX(r), RectRangeX(all), keepsize);
+		return QRectF(QPointF(x1x2.first, r.top()), QPointF(x1x2.second, r.bottom()));
+	}
+
+	QRectF RectAdjustY(const QRectF & r, const QRectF & all, bool keepsize)
+	{
+		auto y1y2 = range_adjust<double>(RectRangeY(r), RectRangeY(all), keepsize);
+		return QRectF(QPointF(r.left(), y1y2.first), QPointF(r.right(), y1y2.second));
+	}
+
+	QRectF RectExpand(const QRectF & r, double v)
 	{
 		QRectF ret = r;
 		ret.setLeft(r.left() - v);
@@ -145,7 +104,7 @@ namespace tool {
 		return ret;
 	}
 
-	QRectF rectExpandX(QRectF r, double v)
+	QRectF RectExpandX(const QRectF & r, double v)
 	{
 		QRectF ret = r;
 		ret.setLeft(r.left() - v);
@@ -153,7 +112,7 @@ namespace tool {
 		return ret;
 	}
 
-	QRectF rectExpandY(QRectF r, double v)
+	QRectF RectExpandY(const QRectF & r, double v)
 	{
 		QRectF ret = r;
 		ret.setTop(r.top() - v);
@@ -161,7 +120,7 @@ namespace tool {
 		return ret;
 	}
 
-	QRectF rectMoveX(QRectF r, double v)
+	QRectF RectMoveX(const QRectF & r, double v)
 	{
 		QRectF ret = r;
 		ret.setLeft(r.left() + v);
@@ -169,15 +128,15 @@ namespace tool {
 		return ret;
 	}
 
-	QRectF rectMoveY(QRectF r, double v)
+	QRectF RectMoveY(const QRectF & r, double v)
 	{
 		QRectF ret = r;
 		ret.setTop(r.top() + v);
 		ret.setBottom(r.bottom() + v);
 		return ret;
 	}
-	
-	double range_split(std::pair<double, double> rng, int countHint, std::vector<double> & ret)
+
+	double DivideRange(const std::pair<double, double> & rng, int countHint, std::vector<double> & ret)
 	{
 		ret.clear();
 		
@@ -213,7 +172,7 @@ namespace tool {
 		return step;
 	}
 
-	QRectF rectFlipY(QRectF r)
+	QRectF RectFlipY(const QRectF & r)
 	{
 		QRectF ret = r;
 		ret.setTop(r.bottom());
@@ -221,18 +180,26 @@ namespace tool {
 		return ret;
 	}
 
-	QPointF map(QPointF pa, QRectF ra, QRectF rb)
+	QRectF RectFlipX(const QRectF & r)
 	{
-		double x = map(pa.rx(), { ra.left(), ra.right() }, { rb.left(), rb.right() });
-		double y = map(pa.ry(), { ra.top(), ra.bottom() }, { rb.top(), rb.bottom() });
+		QRectF ret = r;
+		ret.setLeft(r.right());
+		ret.setRight(r.left());
+		return ret;
+	}
+
+	QPointF Map(QPointF pa, QRectF ra, QRectF rb)
+	{
+		double x = Map(pa.rx(), RectRangeX(ra), RectRangeX(rb));
+		double y = Map(pa.ry(), RectRangeY(ra), RectRangeY(rb));
 
 		return QPointF(x, y);
 	}
 
-	QRectF map(QRectF pa, QRectF ra, QRectF rb)
+	QRectF Map(QRectF pa, QRectF ra, QRectF rb)
 	{
-		QPointF tl = map(pa.topLeft(), ra, rb);
-		QPointF br = map(pa.bottomRight(), ra, rb);
+		QPointF tl = Map(pa.topLeft(), ra, rb);
+		QPointF br = Map(pa.bottomRight(), ra, rb);
 
 		return QRectF(tl, br);
 	}

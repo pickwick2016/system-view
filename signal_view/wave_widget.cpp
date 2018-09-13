@@ -19,7 +19,6 @@ WaveWidget::WaveWidget(QWidget *parent) : SignalWidget(parent)
 		m_valueMarker[i].setDivides(5);
 		m_lines[i].setPen(QPen(QColor(67, 217, 150)));
 	}
-	
 }
 
 WaveWidget::~WaveWidget()
@@ -51,7 +50,7 @@ void WaveWidget::load(std::shared_ptr<Reader> reader)
 bool WaveWidget::reload(double t1, double t2)
 {
 	auto visible = visibleArea();
-	std::pair<double, double> currentTime = { visible.left(), visible.right() };
+	std::pair<double, double> currentTime = tool::RectRangeX(visible);
 	if (currentTime == std::pair<double, double>({t1, t2})) {
 		return true;
 	}
@@ -113,26 +112,23 @@ QRectF WaveWidget::viewport(int tag)
 	QRectF bound = rect();
 
 	int border = 2;
-	float rightBand = 64;
-	float upBand = 24;
+	double rightBand = 64;
+	double upBand = 24;
 
-	float w[2] = { bound.width() - 3 * border - rightBand, rightBand };
+	double w[2] = { bound.width() - 3 * border - rightBand, rightBand };
 
 	int channel = m_loader.channel();
-	float channelHeight = bound.height() - upBand - 2 * border - channel * border;
-	float h[3] = { upBand, channelHeight / channel, channelHeight / channel };
+	double channelHeight = bound.height() - upBand - 2 * border - channel * border;
+	double h[3] = { upBand, channelHeight / channel, channelHeight / channel };
 
 	int col = tag % 10;
 	int row = tag / 10;
 
 	if ((tag == 0) || (col < 2 && row >= 1 && row <= channel)) {
-		float offsetx = std::accumulate(w, w + col, 0) + (col + 1) * border;
-		float offsety = std::accumulate(h, h + row, 0) + (row + 1) * border;
+		double offsetx = std::accumulate(w, w + col, 0) + (col + 1) * border;
+		double offsety = std::accumulate(h, h + row, 0) + (row + 1) * border;
 
-		QPointF pt = bound.topLeft();
-		pt.rx() = pt.rx() + offsetx;
-		pt.ry() = pt.ry() + offsety;
-
+		QPointF pt = bound.topLeft() + QPointF(offsetx, offsety);
 		return QRectF(pt, QSizeF(w[col], h[row]));
 	}
 
@@ -178,7 +174,7 @@ void WaveWidget::drawTimeMarker(QPainter * painter)
 
 	MarkerPanel panel;
 	panel.setRect(bound);
-	panel.setRange({ visible.left(), visible.right()});
+	panel.setRange(tool::RectRangeX(visible));
 
 	panel.paint(painter);
 }
@@ -194,7 +190,7 @@ void WaveWidget::drawChannel(QPainter * painter, int idx)
 	// mark区.
 	QRectF bound = viewport(idx * 10 + 11);
 	m_valueMarker[idx].setRect(bound);
-	m_valueMarker[idx].setRange({ visible.top(), visible.bottom() });
+	m_valueMarker[idx].setRange(tool::RectRangeY(visible));
 	m_valueMarker[idx].paint(painter);
 
 	// 数据区.
@@ -212,8 +208,7 @@ void WaveWidget::setVisibleArea(QRectF r)
 	total.setTop(-std::numeric_limits<double>::max());
 	total.setBottom(std::numeric_limits<double>::max());
 
-	// TODO:应该限制矩形.
-	area = tool::adjust(area, total, true);
+	area = tool::RectAdjust(area, total, true);
 	
 	if (visible != area) {
 		if (reload(area.left(), area.right())) {

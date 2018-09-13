@@ -54,14 +54,6 @@ void WaterfallWidget::load(std::shared_ptr<Reader> reader)
 	m_loader->load(reader);
 
 	executeCommand(SignalCommand::XY_Reset);
-	
-	//bool loaded = m_loader->isLoaded();
-	//if (loaded) {
-	//	m_visibleArea = m_loader->totalArea();
-	//}
-	//else {
-	//	m_visibleArea = QRectF();
-	//}
 }
 
 bool WaterfallWidget::load(QString filename, int type, double samplerate)
@@ -71,16 +63,7 @@ bool WaterfallWidget::load(QString filename, int type, double samplerate)
 	m_loader->load(filename.toStdString(), type, samplerate);
 
 	executeCommand(SignalCommand::XY_Reset);
-	//
-	bool loaded = m_loader->isLoaded();
-	//if (loaded) {
-	//	m_visibleArea = m_loader->totalArea();
-	//}
-	//else {
-	//	m_visibleArea = QRectF();
-	//}
-
-	return loaded;
+	return  m_loader->isLoaded();
 }
 
 void WaterfallWidget::close()
@@ -115,21 +98,19 @@ void WaterfallWidget::paintEvent(QPaintEvent *event)
 
 void WaterfallWidget::drawTimeBar(QPainter & painter)
 {
-	auto bound = this->viewport(1);
+	auto bound = this->viewport(0);
 	if (bound.isEmpty())
 		return;
 
-	QRectF visibleArea = this->visibleArea();
-
 	MarkerPanel marker;
 	marker.setRect(bound);
-	marker.setRange({ visibleArea.left(), visibleArea.right() });
+	marker.setRange(tool::RectRangeX(visibleArea()));
 	marker.paint(&painter);
 }
 
 void WaterfallWidget::drawFreqBar(QPainter & painter)
 {
-	auto bound = this->viewport(2);
+	auto bound = this->viewport(11);
 	if (bound.isEmpty())
 		return;
 
@@ -138,13 +119,13 @@ void WaterfallWidget::drawFreqBar(QPainter & painter)
 	MarkerPanel marker;
 	marker.setRect(bound);
 	marker.setDirection(1);
-	marker.setRange({ visibleArea.top(), visibleArea.bottom() });
+	marker.setRange(tool::RectRangeY(visibleArea));
 	marker.paint(&painter);
 }
 
 void WaterfallWidget::drawData(QPainter & painter)
 {
-	QRectF bound = this->viewport(); // 控件视口（像素，设备）
+	QRectF bound = this->viewport(10); // 控件视口（像素，设备）
 
 	QRectF visibleArea = this->visibleArea();
 
@@ -155,8 +136,8 @@ void WaterfallWidget::drawData(QPainter & painter)
 		QPixmap & pixmap = m_loader->pixmap();
 		QRect pixmapRect = pixmap.rect();
 
-		QRectF drawArea = tool::map(pixmapArea, visibleArea, tool::rectFlipY(bound));
-		drawArea = tool::rectFlipY(drawArea);
+		QRectF drawArea = tool::Map(pixmapArea, visibleArea, tool::RectFlipY(bound));
+		drawArea = tool::RectFlipY(drawArea);
 		painter.drawPixmap(drawArea, pixmap, pixmapRect);
 
 		painter.setClipRect(QRect());
@@ -168,10 +149,10 @@ void WaterfallWidget::drawSelection(QPainter & painter)
 {
 	QRectF selection = selectArea();
 	if (! selection.isEmpty()) {
-		QRectF bound = this->viewport(); // 控件视口（像素，设备）
+		QRectF bound = this->viewport(10); // 控件视口（像素，设备）
 		painter.setClipRect(bound);
 
-		QRectF drawArea = tool::map(selection, visibleArea(), tool::rectFlipY(bound));
+		QRectF drawArea = tool::Map(selection, visibleArea(), tool::RectFlipY(bound));
 		drawArea = drawArea.normalized();
 
 		painter.setPen(QPen(QColor(255, 255, 255), 2, Qt::DotLine));
@@ -189,36 +170,32 @@ QRectF WaterfallWidget::selectArea()
 
 	QRectF ret(m_dragStartPos, m_dragEndPos);
 	QRectF total = totalArea();
-	ret = tool::clip(ret.normalized(), total);
+	ret = tool::RectClip(ret.normalized(), total);
 	return ret;
 }
 
 QRectF WaterfallWidget::viewport(int tag)
 {
+	assert(tag >= 0);
+
 	QRectF bound = rect();
-	bound = tool::rectExpand(bound, -1);
-	
-	QRectF temp;
 
-	int rightBand = 64;
-	int rightPos = bound.right() - rightBand;
-	int upBand = 24;
-	int bottomPos = bound.top() + upBand;
+	int border = 2;
+	double rightBand = 64;
+	double upBand = 24;
 
-	if (tag == 0) {
-		temp.setTopLeft(QPointF(bound.left(), bottomPos + 1));
-		temp.setBottomRight(QPointF(rightPos, bound.bottom()));
-		return temp;
-	}
-	else if (tag == 1) {
-		temp.setTopLeft(QPointF(bound.left(), bound.top()));
-		temp.setBottomRight(QPointF(rightPos, bottomPos));
-		return temp;
-	}
-	else if (tag == 2) {
-		temp.setTopLeft(QPointF(rightPos + 1, bottomPos + 1));
-		temp.setBottomRight(QPointF(bound.right(), bound.bottom()));
-		return temp;
+	double w[2] = { bound.width() - 2 * border - rightBand, rightBand };
+	double h[2] = { upBand, bound.height() - upBand - 2 * border };
+
+	int col = tag % 10;
+	int row = tag / 10;
+
+	if (tag == 0 || tag == 10 || tag == 11) {
+		double offsetx = std::accumulate(w, w + col, 0) + (col + 1) * border;
+		double offsety = std::accumulate(h, h + row, 0) + (row + 1) * border;
+
+		QPointF pt = bound.topLeft() + QPointF(offsetx, offsety);
+		return QRectF(pt, QSizeF(w[col], h[row]));
 	}
 
 	return QRectF();
@@ -246,7 +223,7 @@ QRectF WaterfallWidget::totalArea()
 
 void WaterfallWidget::setVisibleArea(QRectF r)
 {
-	QRectF newArea = tool::clip(r.normalized(), totalArea());
+	QRectF newArea = tool::RectClip(r.normalized(), totalArea());
 	
 
 	if (newArea != visibleArea()) {
@@ -260,46 +237,6 @@ void WaterfallWidget::setVisibleArea(QRectF r)
 	}
 }
 
-void WaterfallWidget::wheelEvent(QWheelEvent * evt)
-{
-	bool ctrl = evt->modifiers() & Qt::ControlModifier;
-
-	auto pos = evt->pos();
-	auto viewport = this->viewport();
-	auto pxy = tool::map(pos, viewport, tool::rectFlipY(visibleArea()));
-	
-	auto angles = evt->angleDelta();
-
-	//if (!angles.isNull()) {
-
-	//	if (ctrl) {
-	//		if (angles.ry() > 0) {
-	//			executeCommand(FreqZoomInAt, pxy.ry());
-	//		}
-	//		else {
-	//			executeCommand(FreqZoomOutAt, pxy.ry());
-	//		}
-	//	}
-	//	else {
-	//		if (angles.ry() > 0) {
-	//			executeCommand(TimeZoomInAt, pxy.rx());
-	//		}
-	//		else {
-	//			executeCommand(TimeZoomOutAt, pxy.rx());
-	//		}
-	//	}
-	//}
-
-	//evt->accept();
-}
-
-void WaterfallWidget::keyPressEvent(QKeyEvent * evt)
-{
-	SignalWidget::keyPressEvent(evt);
-	if (evt->isAccepted()) {
-		return;
-	}
-}
 
 bool WaterfallWidget::executeCommand(int cmd, QVariant param)
 {
@@ -376,7 +313,7 @@ void WaterfallWidget::mousePressEvent(QMouseEvent *evt)
 		bool hasSelection = (m_dragStartPos != m_dragEndPos);
 		
 		m_dragStartPoint = evt->pos();
-		m_dragStartPos = tool::map(evt->pos(), tool::rectFlipY(viewport()), visibleArea());
+		m_dragStartPos = tool::Map(evt->pos(), tool::RectFlipY(viewport(10)), visibleArea());
 
 		m_dragEndPoint = m_dragStartPoint;
 		m_dragEndPos = m_dragStartPos;
@@ -390,16 +327,16 @@ void WaterfallWidget::mousePressEvent(QMouseEvent *evt)
 void WaterfallWidget::mouseMoveEvent(QMouseEvent *evt)
 {
 	auto pos = evt->pos();
-	auto viewport = this->viewport(0);
+	auto viewport = this->viewport(10);
 
 	if (viewport.contains(pos)) {
-		auto pos2 = tool::map(evt->pos(), tool::rectFlipY(viewport), visibleArea());
+		auto pos2 = tool::Map(evt->pos(), tool::RectFlipY(viewport), visibleArea());
 		emit positionMoved(pos2);
 	}
 	
 	if (m_mousePressed) {
 		m_dragEndPoint = evt->pos();
-		m_dragEndPos = tool::map(evt->pos(), tool::rectFlipY(viewport), visibleArea());;
+		m_dragEndPos = tool::Map(evt->pos(), tool::RectFlipY(viewport), visibleArea());;
 		repaint();
 	}
 }
@@ -413,105 +350,6 @@ void WaterfallWidget::mouseReleaseEvent(QMouseEvent *evt)
 
 	m_mousePressed = false;
 }
-
-QRectF WaterfallWidget::setVisible(WaterfallCommand cmd, double param)
-{
-	QRectF ret = visibleArea();
-	QRectF totalArea = this->totalArea();
-
-	//switch (cmd) {
-	//case XY_Reset:
-	//	ret = totalArea;
-	//	break;
-
-	//case ResetTime:
-	//	ret.setLeft(totalArea.left());
-	//	ret.setRight(totalArea.right());
-	//	break;
-
-	//case ResetFreq:
-	//	ret.setTop(totalArea.top());
-	//	ret.setBottom(totalArea.bottom());
-	//	break;
-
-	//case TimeForward:
-	//	ret = tool::rectMoveX(m_visibleArea, m_visibleArea.width() * 0.1);
-	//	break;
-
-	//case TimeBackward:
-	//	ret = tool::rectMoveX(m_visibleArea, - m_visibleArea.width() * 0.1);
-	//	break;
-
-	//case TimeZoomIn:
-	//	ret = tool::rectExpandX(m_visibleArea, m_visibleArea.width() * 0.1);
-	//	break;
-
-	//case TimeZoomOut:
-	//	ret = tool::rectExpandX(m_visibleArea, -m_visibleArea.width() * 0.1);
-	//	break;
-
-	//case TimeZoomInAt:
-	//	if (tool::range_contain({ m_visibleArea.left(), m_visibleArea.right() }, param) > 0) {
-	//		double r0 = param - m_visibleArea.left();
-	//		double r1 = m_visibleArea.right() - param;
-	//		ret.setLeft(param - r0 * 1.1);
-	//		ret.setRight(param + r1 * 1.1);
-	//	}
-	//	break;
-
-	//case TimeZoomOutAt:
-	//	if (tool::range_contain({ m_visibleArea.left(), m_visibleArea.right() }, param) > 0) {
-	//		double r0 = param - m_visibleArea.left();
-	//		double r1 = m_visibleArea.right() - param;
-	//		ret.setLeft(param - r0 * 0.9);
-	//		ret.setRight(param + r1 * 0.9);
-	//	}
-	//	break;
-
-	//case FreqForward:
-	//	ret = tool::rectMoveY(m_visibleArea, m_visibleArea.height() * 0.1);
-	//	break;
-
-	//case FreqBackward:
-	//	ret = tool::rectMoveY(m_visibleArea, -m_visibleArea.height() * 0.1);
-	//	break;
-	//
-	//case FreqZoomIn:
-	//	ret = tool::rectExpandY(m_visibleArea, m_visibleArea.height() * 0.1);
-	//	break;
-
-	//case FreqZoomOut:
-	//	ret = tool::rectExpandY(m_visibleArea, -m_visibleArea.height() * 0.1);
-	//	break;
-
-	//case FreqZoomInAt:
-	//	if (tool::range_contain({ m_visibleArea.top(), m_visibleArea.bottom() }, param) > 0) {
-	//		double r0 = param - m_visibleArea.top();
-	//		double r1 = m_visibleArea.bottom() - param;
-	//		ret.setTop(param - r0 * 1.1);
-	//		ret.setBottom(param + r1 * 1.1);
-
-	//	}
-	//	break;
-
-	//case FreqZoomOutAt:
-	//	if (tool::range_contain({ m_visibleArea.top(), m_visibleArea.bottom() }, param) > 0) {
-	//		double r0 = param - m_visibleArea.top();
-	//		double r1 = m_visibleArea.bottom() - param;
-	//		ret.setTop(param - r0 * 0.9);
-	//		ret.setBottom(param + r1 * 0.9);
-
-	//	}
-	//	break;
-
-	//default:
-	//	return QRectF();
-	//}
-	//
-	//ret = tool::adjust(ret, totalArea);
-	return ret;
-}
-
 
 void WaterfallWidget::appendShortcuts()
 {

@@ -35,11 +35,15 @@ void SignalWidget::initShortcuts()
 	m_commandParams[X_Forward] = QVariant(0.05);
 	m_commandParams[X_ZoomIn] = QVariant(0.05);
 	m_commandParams[X_ZoomOut] = QVariant(0.05);
+	m_commandParams[X_ZoomInAt] = QVariant(0.05);
+	m_commandParams[X_ZoomOutAt] = QVariant(0.05);
 
 	m_commandParams[Y_Backward] = QVariant(0.05);
 	m_commandParams[Y_Forward] = QVariant(0.05);
 	m_commandParams[Y_ZoomIn] = QVariant(0.05);
 	m_commandParams[Y_ZoomOut] = QVariant(0.05);
+	m_commandParams[Y_ZoomInAt] = QVariant(0.05);
+	m_commandParams[Y_ZoomOutAt] = QVariant(0.05);
 }
 
 bool SignalWidget::executeCommand(int cmd, QVariant param)
@@ -62,35 +66,55 @@ bool SignalWidget::executeCommand(int cmd, QVariant param)
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::X_Backward:
-		visible = tool::rectMoveX(visible, - visible.width() * param.toDouble());
+		visible = tool::RectMoveX(visible, - visible.width() * param.toDouble());
+		visible = tool::RectAdjustX(visible, total, true);
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::X_Forward:
-		visible = tool::rectMoveX(visible, visible.width() * param.toDouble());
+		visible = tool::RectMoveX(visible, visible.width() * param.toDouble());
+		visible = tool::RectAdjustX(visible, total, true);
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::X_ZoomIn:
-		visible = tool::rectExpandX(visible, visible.width() * param.toDouble());
+		visible = tool::RectExpandX(visible, visible.width() * param.toDouble());
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::X_ZoomOut:
-		visible = tool::rectExpandX(visible, -visible.width() * param.toDouble());
+		visible = tool::RectExpandX(visible, -visible.width() * param.toDouble());
+		setVisibleArea(visible);
+		break;
+	case SignalCommand::X_ZoomInAt:
+		visible = tool::RectExpandX(visible, visible.width() * 0.1);
+		setVisibleArea(visible);
+		break;
+	case SignalCommand::X_ZoomOutAt:
+		visible = tool::RectExpandX(visible, -visible.width() * 0.1);
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::Y_Backward:
-		visible = tool::rectMoveY(visible, -visible.height() * param.toDouble());
+		visible = tool::RectMoveY(visible, -visible.height() * param.toDouble());
+		visible = tool::RectAdjustY(visible, total, true);
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::Y_Forward:
-		visible = tool::rectMoveY(visible, visible.height() * param.toDouble());
+		visible = tool::RectMoveY(visible, visible.height() * param.toDouble());
+		visible = tool::RectAdjustY(visible, total, true);
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::Y_ZoomIn:
-		visible = tool::rectExpandY(visible, visible.height() * param.toDouble());
+		visible = tool::RectExpandY(visible, visible.height() * param.toDouble());
 		setVisibleArea(visible);
 		break;
 	case SignalCommand::Y_ZoomOut:
-		visible = tool::rectExpandY(visible, -visible.height() * param.toDouble());
+		visible = tool::RectExpandY(visible, -visible.height() * param.toDouble());
+		setVisibleArea(visible);
+		break;
+	case SignalCommand::Y_ZoomInAt:
+		visible = tool::RectExpandY(visible, visible.height() * 0.1);
+		setVisibleArea(visible);
+		break; 
+	case SignalCommand::Y_ZoomOutAt:
+		visible = tool::RectExpandY(visible, -visible.height() * 0.1);
 		setVisibleArea(visible);
 		break;
 	default:
@@ -130,56 +154,52 @@ void SignalWidget::keyPressEvent(QKeyEvent * evt)
 	}
 }
 
+QRectF SignalWidget::checkPointBound(QWheelEvent * evt)
+{
+	assert(evt != nullptr);
+
+	auto pos = evt->pos();
+	if (this->viewport(10).contains(pos)) {
+		return viewport(10);
+	}
+	else if (viewport(20).contains(pos)) {
+		return viewport(20);
+	}
+
+	return QRectF();
+}
 
 void SignalWidget::wheelEvent(QWheelEvent * evt)
 {
+	auto bound = checkPointBound(evt);
+	if (bound.isEmpty()) {
+		return;
+	}
+
 	bool ctrl = evt->modifiers() & Qt::ControlModifier;
 	auto pos = evt->pos();
-	
-	//auto viewport = this->viewport();
-	//auto pxy = tool::map(pos, viewport, tool::rectFlipY(m_visibleArea));
-
-	//auto angles = evt->angleDelta();
-
-	//if (!angles.isNull()) {
-
-	//	if (ctrl) {
-	//		if (angles.ry() > 0) {
-	//			executeCommand(FreqZoomInAt, pxy.ry());
-	//		}
-	//		else {
-	//			executeCommand(FreqZoomOutAt, pxy.ry());
-	//		}
-	//	}
-	//	else {
-	//		if (angles.ry() > 0) {
-	//			executeCommand(TimeZoomInAt, pxy.rx());
-	//		}
-	//		else {
-	//			executeCommand(TimeZoomOutAt, pxy.rx());
-	//		}
-	//	}
-	//}
+	auto pxy = tool::Map(pos, bound, tool::RectFlipY(visibleArea()));
+	auto angles = evt->angleDelta();
+	if (!angles.isNull()) {
+		if (ctrl) {
+			if (angles.ry() > 0) {
+				executeCommand(Y_ZoomInAt, pxy.ry());
+			}
+			else {
+				executeCommand(Y_ZoomOutAt, pxy.ry());
+			}
+		}
+		else {
+			if (angles.ry() > 0) {
+				executeCommand(X_ZoomInAt, pxy.rx());
+			}
+			else {
+				executeCommand(X_ZoomOutAt, pxy.rx());
+			}
+		}
+		evt->accept();
+	}
 }
-
-//
-//void SignalWidget::mousePressEvent(QMouseEvent *evt)
-//{
-//
-//}
-//
-//
-//void SignalWidget::mouseMoveEvent(QMouseEvent *evt)
-//{
-//
-//}
-//
-//
-//void SignalWidget::mouseReleaseEvent(QMouseEvent *evt)
-//{
-//
-//}
-
 
 QRectF SignalWidget::visibleArea()
 {

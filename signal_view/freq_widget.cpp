@@ -56,6 +56,8 @@ FreqWidget::FreqWidget(QWidget *parent) : QWidget(parent)
 	layout->addWidget(chartView);
 	layout->setMargin(0);
 	layout->setContentsMargins(QMargins(0, 0, 0, 0));
+
+	setMinimumSize(QSize(100, 75));
 }
 
 FreqWidget::~FreqWidget()
